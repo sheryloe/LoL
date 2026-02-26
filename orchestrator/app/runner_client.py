@@ -80,6 +80,69 @@ class RunnerClient:
             raise RuntimeError("RUNNER_PREFLIGHT_FAILED: invalid preflight response")
         return payload
 
+    async def get_auth_urls(self, timeout_sec: float = 8.0) -> dict[str, Any]:
+        endpoint = f"{self.base_url}/auth/urls"
+        try:
+            async with httpx.AsyncClient(timeout=timeout_sec) as client:
+                response = await client.get(endpoint)
+                response.raise_for_status()
+        except Exception as exc:
+            raise RuntimeError(f"RUNNER_AUTH_URLS_FAILED: {exc}") from exc
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise RuntimeError("RUNNER_AUTH_URLS_FAILED: invalid response")
+        return payload
+
+    async def get_auth_runtime(self, timeout_sec: float = 8.0) -> dict[str, Any]:
+        endpoint = f"{self.base_url}/auth/runtime"
+        try:
+            async with httpx.AsyncClient(timeout=timeout_sec) as client:
+                response = await client.get(endpoint)
+                response.raise_for_status()
+        except Exception as exc:
+            raise RuntimeError(f"RUNNER_AUTH_RUNTIME_FAILED: {exc}") from exc
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise RuntimeError("RUNNER_AUTH_RUNTIME_FAILED: invalid response")
+        return payload
+
+    async def set_auth_runtime_keys(
+        self,
+        openai_api_key: str | None,
+        gemini_api_key: str | None,
+        persist: bool = True,
+        timeout_sec: float = 12.0,
+    ) -> dict[str, Any]:
+        endpoint = f"{self.base_url}/auth/runtime-keys"
+        body = {
+            "openai_api_key": openai_api_key,
+            "gemini_api_key": gemini_api_key,
+            "persist": persist,
+        }
+        try:
+            async with httpx.AsyncClient(timeout=timeout_sec) as client:
+                response = await client.post(endpoint, json=body)
+                response.raise_for_status()
+        except Exception as exc:
+            raise RuntimeError(f"RUNNER_AUTH_SET_KEYS_FAILED: {exc}") from exc
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise RuntimeError("RUNNER_AUTH_SET_KEYS_FAILED: invalid response")
+        return payload
+
+    async def start_codex_device_auth(self, session_id: str, timeout_sec: float = 8.0) -> dict[str, Any]:
+        endpoint = f"{self.base_url}/auth/codex/device/start"
+        try:
+            async with httpx.AsyncClient(timeout=timeout_sec) as client:
+                response = await client.post(endpoint, json={"session_id": session_id})
+                response.raise_for_status()
+        except Exception as exc:
+            raise RuntimeError(f"RUNNER_AUTH_CODEX_DEVICE_START_FAILED: {exc}") from exc
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise RuntimeError("RUNNER_AUTH_CODEX_DEVICE_START_FAILED: invalid response")
+        return payload
+
     async def stream_job(self, job_id: str) -> AsyncGenerator[dict[str, Any], None]:
         endpoint = f"{self.base_url}/stream/{job_id}"
         async with httpx.AsyncClient(timeout=None) as client:

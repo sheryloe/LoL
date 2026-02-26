@@ -202,6 +202,30 @@
         <div id="runnerReadiness" class="status"></div>
       </div>
       <div id="workflowStatus" class="status"></div>
+      <div class="stack">
+        <h3 class="panel-title">Runner Auth</h3>
+        <div class="grid-2">
+          <button id="openCodexLoginBtn" class="btn ghost">Open OpenAI API Keys</button>
+          <button id="startCodexDeviceBtn" class="btn secondary">Start Codex Device Auth</button>
+        </div>
+        <div class="grid-2">
+          <button id="openGeminiLoginBtn" class="btn ghost">Open Gemini Login Page</button>
+          <button id="refreshAuthStatusBtn" class="btn ghost">Refresh Auth Status</button>
+        </div>
+        <div class="grid-2">
+          <input id="openaiApiKeyInput" type="password" placeholder="OPENAI_API_KEY (optional)" />
+          <input id="geminiApiKeyInput" type="password" placeholder="GEMINI_API_KEY (optional)" />
+        </div>
+        <div class="grid-2">
+          <button id="saveRuntimeKeysBtn" class="btn">Save Runtime Keys</button>
+          <label style="display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;">
+            <input id="persistRuntimeKeys" type="checkbox" checked style="width:auto;" />
+            persist in runner
+          </label>
+        </div>
+        <div id="authStatus" class="status"></div>
+        <div id="authLogs" class="panel-content"></div>
+      </div>
       <div>
         <h3 class="panel-title">Stream Logs</h3>
         <div id="logs" class="logs"></div>
@@ -299,12 +323,16 @@
     const logs = el("logs");
     const workflowStatus = el("workflowStatus");
     const runnerReadiness = el("runnerReadiness");
+    const authStatus = el("authStatus");
+    const authLogs = el("authLogs");
     const settingsStatus = el("settingsStatus");
     const runHistory = el("runHistory");
     const conversationHistory = el("conversationHistory");
     let currentWorkflowJobId = null;
     let source = null;
     let runnerReady = false;
+    let authUrls = {};
+    let authSource = null;
 
     const panels = {
       plan: el("panel-plan"),
@@ -324,6 +352,11 @@
     function appendLog(line) {
       logs.textContent += line + "\n";
       logs.scrollTop = logs.scrollHeight;
+    }
+
+    function appendAuthLog(line) {
+      authLogs.textContent += line + "\n";
+      authLogs.scrollTop = authLogs.scrollHeight;
     }
 
     function clearWorkflowView() {
@@ -410,6 +443,127 @@
         setStatus(runnerReadiness, `runner preflight failed: ${String(err.message || err)}`);
         return false;
       }
+    }
+
+    async function loadAuthUrls() {
+      try {
+        authUrls = await apiJson("/api/runner/auth/urls");
+        return authUrls;
+      } catch (err) {
+        setStatus(authStatus, `auth url load failed: ${String(err.message || err)}`);
+        return {};
+      }
+    }
+
+    function openExternal(url) {
+      if (!url) {
+        setStatus(authStatus, "auth url is not available");
+        return;
+      }
+      const popup = window.open(url, "_blank", "noopener,noreferrer");
+      if (!popup) {
+        setStatus(authStatus, `popup blocked. open manually: ${url}`);
+      } else {
+        setStatus(authStatus, `opened: ${url}`);
+      }
+    }
+
+    async function refreshAuthRuntime() {
+      try {
+        const data = await apiJson("/api/runner/auth/runtime");
+        const codex = data.codex || {};
+        const gemini = data.gemini || {};
+        setStatus(
+          authStatus,
+          `codex=${codex.ready ? "ready" : "not_ready"} (${codex.detail || "-"}) | `
+          + `gemini=${gemini.ready ? "ready" : "not_ready"} (${gemini.detail || "-"})`
+        );
+        return data;
+      } catch (err) {
+        setStatus(authStatus, `auth status failed: ${String(err.message || err)}`);
+        return null;
+      }
+    }
+
+    async function saveRuntimeKeys() {
+      const openaiValue = el("openaiApiKeyInput").value.trim();
+      const geminiValue = el("geminiApiKeyInput").value.trim();
+      try {
+        await apiJson("/api/runner/auth/runtime-keys", {
+          method: "POST",
+          body: JSON.stringify({
+            openai_api_key: openaiValue,
+            gemini_api_key: geminiValue,
+            persist: !!el("persistRuntimeKeys").checked
+          })
+        });
+        setStatus(authStatus, "runtime keys updated");
+        await refreshAuthRuntime();
+        await refreshRunnerReadiness();
+      } catch (err) {
+        setStatus(authStatus, `set runtime keys failed: ${String(err.message || err)}`);
+      }
+    }
+
+    async function startCodexDeviceAuth() {
+      if (authSource) {
+        authSource.close();
+        authSource = null;
+      }
+      authLogs.textContent = "";
+      await loadAuthUrls();
+      openExternal(authUrls.openai_api_keys_url || authUrls.codex_login_url || "");
+
+      let data;
+      try {
+        data = await apiJson("/api/runner/auth/codex/device/start", {
+          method: "POST",
+          body: JSON.stringify({
+            session_id: `runner-auth-codex-${Date.now()}`
+          })
+        });
+      } catch (err) {
+        setStatus(authStatus, `start codex device auth failed: ${String(err.message || err)}`);
+        return;
+      }
+
+      const jobId = data.job_id;
+      setStatus(authStatus, `codex device auth started: ${jobId}`);
+      authSource = new EventSource(`/api/runner/jobs/stream/${encodeURIComponent(jobId)}`);
+      authSource.onmessage = async (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === "log") {
+            appendAuthLog(`[${payload.stream}] ${payload.message}`);
+            const lowered = String(payload.message || "").toLowerCase();
+            if (lowered.includes("cloudflare") || lowered.includes("400 bad request")) {
+              setStatus(
+                authStatus,
+                "device auth blocked (cloudflare). use OpenAI API key page + Save Runtime Keys flow."
+              );
+            }
+            const urlMatch = String(payload.message || "").match(/https?:\/\/[^\s]+/);
+            if (urlMatch && urlMatch[0]) {
+              appendAuthLog(`[hint] open this url: ${urlMatch[0]}`);
+            }
+          } else {
+            appendAuthLog(JSON.stringify(payload));
+            if (payload.type === "meta" && payload.event === "finished") {
+              const statusPayload = await apiJson(`/api/runner/jobs/${encodeURIComponent(jobId)}`);
+              setStatus(authStatus, `codex device auth finished: ${statusPayload.status} (rc=${statusPayload.return_code})`);
+              authSource.close();
+              authSource = null;
+              await refreshAuthRuntime();
+              await refreshRunnerReadiness();
+            }
+          }
+        } catch (err) {
+          appendAuthLog(`parse error: ${String(err.message || err)}`);
+        }
+      };
+      authSource.onerror = () => {
+        appendAuthLog("[stream] auth stream disconnected");
+      };
     }
 
     function renderRuns(items) {
@@ -667,12 +821,25 @@
     el("refreshRoomLogsBtn").onclick = () => refreshRoomLogs();
     el("refreshFiles").onclick = () => refreshFiles();
     el("checkRunnerBtn").onclick = () => refreshRunnerReadiness();
+    el("openCodexLoginBtn").onclick = async () => {
+      await loadAuthUrls();
+      openExternal(authUrls.openai_api_keys_url || authUrls.codex_login_url || "");
+    };
+    el("openGeminiLoginBtn").onclick = async () => {
+      await loadAuthUrls();
+      openExternal(authUrls.gemini_login_url || authUrls.gemini_api_keys_url || "");
+    };
+    el("refreshAuthStatusBtn").onclick = () => refreshAuthRuntime();
+    el("saveRuntimeKeysBtn").onclick = () => saveRuntimeKeys();
+    el("startCodexDeviceBtn").onclick = () => startCodexDeviceAuth();
 
     (async () => {
       await refreshProjects();
       await refreshFiles();
       await loadSettings();
       await refreshRoomLogs();
+      await loadAuthUrls();
+      await refreshAuthRuntime();
       await refreshRunnerReadiness();
     })();
   </script>

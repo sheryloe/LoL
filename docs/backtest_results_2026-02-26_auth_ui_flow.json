@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-02-26T06:06:30Z",
+  "scope": "docker-internal-only",
+  "checks": [
+    {
+      "name": "auth_urls_endpoint",
+      "status": "pass",
+      "http_status": 200
+    },
+    {
+      "name": "auth_runtime_endpoint",
+      "status": "pass",
+      "http_status": 200
+    },
+    {
+      "name": "set_runtime_keys_endpoint",
+      "status": "pass",
+      "http_status": 200
+    },
+    {
+      "name": "runner_ca_cert_mounted_check",
+      "status": "pass",
+      "http_status": 200,
+      "runner_ca_cert_file": "/certs/ca-bundle.pem",
+      "runner_ca_cert_exists": true
+    },
+    {
+      "name": "preflight_ready_after_runtime_keys",
+      "status": "pass",
+      "http_status": 200,
+      "ready": true
+    },
+    {
+      "name": "codex_device_auth_start_endpoint",
+      "status": "pass",
+      "http_status": 200
+    },
+    {
+      "name": "runner_job_stream_proxy_endpoint",
+      "status": "pass",
+      "http_status": 200
+    },
+    {
+      "name": "codex_device_auth_failure_surface",
+      "status": "pass",
+      "http_status": 200,
+      "stderr_contains": "error sending request for url (https://auth.openai.com/api/accounts/deviceauth/usercode)"
+    }
+  ],
+  "notes": [
+    "Device-auth execution failed in this environment due TLS trust chain; UI now exposes auth page buttons and runtime key flow.",
+    "Real success-path run requires valid user credentials and network trust configuration."
+  ],
+  "summary": {
+    "pass_count": 6,
+    "fail_count": 0
+  }
+}

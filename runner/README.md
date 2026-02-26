@@ -22,6 +22,7 @@ Optional explicit environment variables:
 - `GEMINI_CMD` (example: `gemini --prompt {prompt} --yolo`)
 - `OPENAI_API_KEY`
 - `GEMINI_API_KEY`
+- `RUNNER_CA_CERT_FILE` (optional, custom CA bundle path for TLS trust)
 
 `CODEX_CMD` and `GEMINI_CMD` support `{prompt}` placeholder.
 
@@ -43,6 +44,15 @@ Strict readiness endpoint (`GET /preflight/agents`) returns:
 - `ready`
 - `issues[]` with `code`, `message`, `action`
 - `checks` (CLI, command resolution, auth, git status)
+
+Auth helper endpoints:
+
+- `GET /auth/urls`
+- `GET /auth/runtime`
+- `POST /auth/runtime-keys`
+- `POST /auth/codex/device/start`
+
+If Codex device-auth is blocked by Cloudflare/network policy, use API-key flow through `/auth/runtime-keys`.
 
 ## API
 

@@ -38,6 +38,7 @@ Default wiring:
 Create `.env` from `.env.example` and set:
 
 - `RUNNER_AGENT_MODE` (`mock` / `auto` / `real`)
+- `RUNNER_CA_CERT_FILE` (optional, for corporate TLS proxy)
 - `CODEX_CMD`
 - `GEMINI_CMD`
 - `OPENAI_API_KEY`
@@ -67,6 +68,13 @@ Strict preflight check:
 ```powershell
 curl "http://localhost:8765/preflight/agents?cwd_relative=."
 ```
+
+Web UI auth flow:
+
+- OpenAI/Gemini login page buttons
+- Runtime key save (`/api/runner/auth/runtime-keys`)
+- Codex device auth start + stream
+- If Cloudflare 400 occurs on device auth page, use OpenAI API key page + runtime key save flow
 
 ## Core Endpoints
 

@@ -119,3 +119,13 @@ class ProjectSettingsPatchRequest(BaseModel):
         if len(value) != len(set(value)):
             raise ValueError("pipeline_steps must not contain duplicates")
         return value
+
+
+class RunnerAuthRuntimeKeysRequest(BaseModel):
+    openai_api_key: str | None = None
+    gemini_api_key: str | None = None
+    persist: bool = True
+
+
+class RunnerCodexDeviceAuthStartRequest(BaseModel):
+    session_id: str = Field(default="runner-auth-codex", min_length=1)

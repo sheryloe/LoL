@@ -20,6 +20,8 @@ from .models import (
     ProjectSettings,
     ProjectSettingsPatchRequest,
     ProjectSettingsPutRequest,
+    RunnerAuthRuntimeKeysRequest,
+    RunnerCodexDeviceAuthStartRequest,
 )
 from .models import ResolvedChatRequest
 from .project_rooms import ProjectRoomStore
@@ -56,6 +58,59 @@ async def runner_preflight(cwd_relative: str = ".") -> dict:
     try:
         return await runner_client.preflight_report(cwd_relative, timeout_sec=8.0)
     except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/api/runner/auth/urls")
+async def runner_auth_urls() -> dict:
+    try:
+        return await runner_client.get_auth_urls(timeout_sec=8.0)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/api/runner/auth/runtime")
+async def runner_auth_runtime() -> dict:
+    try:
+        return await runner_client.get_auth_runtime(timeout_sec=8.0)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/runner/auth/runtime-keys")
+async def runner_set_auth_runtime_keys(req: RunnerAuthRuntimeKeysRequest) -> dict:
+    try:
+        return await runner_client.set_auth_runtime_keys(
+            openai_api_key=req.openai_api_key,
+            gemini_api_key=req.gemini_api_key,
+            persist=req.persist,
+            timeout_sec=12.0,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/runner/auth/codex/device/start")
+async def runner_start_codex_device_auth(req: RunnerCodexDeviceAuthStartRequest) -> dict:
+    try:
+        return await runner_client.start_codex_device_auth(req.session_id, timeout_sec=8.0)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/api/runner/jobs/{job_id}")
+async def runner_job_status(job_id: str) -> dict:
+    try:
+        return await runner_client.get_job(job_id)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/runner/jobs/{job_id}/cancel")
+async def runner_cancel_job(job_id: str) -> dict:
+    try:
+        return await runner_client.cancel_job(job_id)
+    except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
@@ -156,6 +211,15 @@ async def stream_workflow(workflow_job_id: str, cursor: int = Query(default=0, g
 
     async def event_stream() -> AsyncIterator[str]:
         async for event in workflow_manager.stream(workflow_job_id, cursor=cursor):
+            yield _sse(event)
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.get("/api/runner/jobs/stream/{job_id}")
+async def stream_runner_job(job_id: str) -> StreamingResponse:
+    async def event_stream() -> AsyncIterator[str]:
+        async for event in runner_client.stream_job(job_id):
             yield _sse(event)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

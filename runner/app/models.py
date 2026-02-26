@@ -25,3 +25,13 @@ class PushRequest(BaseModel):
     cwd_relative: str = "."
     remote: str = "origin"
     branch: str | None = None
+
+
+class AuthRuntimeKeysRequest(BaseModel):
+    openai_api_key: str | None = None
+    gemini_api_key: str | None = None
+    persist: bool = True
+
+
+class AuthCodexDeviceStartRequest(BaseModel):
+    session_id: str = "runner-auth-codex"

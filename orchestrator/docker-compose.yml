@@ -10,12 +10,14 @@ services:
       RUNNER_ROOT_DIR: /workspace/LoL
       RUNNER_WRITE_ENABLED: ${RUNNER_WRITE_ENABLED:-false}
       RUNNER_AGENT_MODE: ${RUNNER_AGENT_MODE:-real}
+      RUNNER_CA_CERT_FILE: ${RUNNER_CA_CERT_FILE:-/certs/ca-bundle.pem}
       CODEX_CMD: ${CODEX_CMD:-}
       GEMINI_CMD: ${GEMINI_CMD:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     volumes:
       - ../:/workspace/LoL
+      - ../../certs:/certs:ro
       - runner-home:/root
     restart: unless-stopped
 

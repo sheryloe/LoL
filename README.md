@@ -45,6 +45,8 @@ Latest run:
 - [Docker CLI Mode 5-Step Raw JSON](./docs/backtest_results_2026-02-26_docker_cli_mode.json)
 - [Strict Preflight Report](./docs/BACKTEST_REPORT_2026-02-26_STRICT_PREFLIGHT.md)
 - [Strict Preflight Raw JSON](./docs/backtest_results_2026-02-26_strict_preflight.json)
+- [Auth UI Flow Report](./docs/BACKTEST_REPORT_2026-02-26_AUTH_UI_FLOW.md)
+- [Auth UI Flow Raw JSON](./docs/backtest_results_2026-02-26_auth_ui_flow.json)
 
 ## TODO (Visible on GitHub README)
 
@@ -103,6 +105,12 @@ Optional interactive auth inside Docker:
 ```powershell
 docker exec -it lol-runner codex login
 ```
+
+If device auth page returns Cloudflare 400, use the UI path:
+
+1. `Runner Auth -> Open OpenAI API Keys`
+2. Paste keys into `Save Runtime Keys`
+3. Re-check `Runner Readiness`
 
 Runtime verification:
 

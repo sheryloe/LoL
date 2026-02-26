@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import os
 import queue
 import shlex
 import subprocess
@@ -45,6 +46,7 @@ class Job:
     process: subprocess.Popen[str] | None = None
     condition: asyncio.Condition = field(default_factory=asyncio.Condition)
     seq: int = 0
+    env_overrides: dict[str, str] = field(default_factory=dict)
 
 
 class JobManager:
@@ -52,7 +54,15 @@ class JobManager:
         self._jobs: dict[str, Job] = {}
         self._lock = asyncio.Lock()
 
-    async def create(self, session_id: str, runner: str, cwd: Path, command: list[str], prompt: str) -> Job:
+    async def create(
+        self,
+        session_id: str,
+        runner: str,
+        cwd: Path,
+        command: list[str],
+        prompt: str,
+        env_overrides: dict[str, str] | None = None,
+    ) -> Job:
         job = Job(
             job_id=str(uuid.uuid4()),
             session_id=session_id,
@@ -60,6 +70,7 @@ class JobManager:
             cwd=cwd,
             command=command,
             prompt=prompt,
+            env_overrides=dict(env_overrides or {}),
         )
         async with self._lock:
             self._jobs[job.job_id] = job
@@ -113,6 +124,7 @@ class JobManager:
             job.process = subprocess.Popen(
                 job.command,
                 cwd=str(job.cwd),
+                env={**os.environ, **job.env_overrides},
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
