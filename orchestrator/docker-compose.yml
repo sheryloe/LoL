@@ -1,0 +1,18 @@
+services:
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lol-orchestrator
+    ports:
+      - "8080:8080"
+    environment:
+      RUNNER_BASE_URL: ${RUNNER_BASE_URL:-http://host.docker.internal:8765}
+      ORCH_ROOT_DIR: /workspace/LoL
+      ORCH_DATA_DIR: /app/data
+    volumes:
+      - ../:/workspace/LoL
+      - ./data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

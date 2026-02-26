@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LoL Orchestrator</title>
+  <style>
+    :root {
+      --bg: #f3f0e9;
+      --surface: #fffdf8;
+      --ink: #1f2328;
+      --muted: #6a6f76;
+      --line: #d8d2c6;
+      --accent: #0c6b58;
+      --accent-2: #f0a84b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans KR", "Pretendard", sans-serif;
+      background: radial-gradient(circle at top right, #fce9cf 0%, var(--bg) 35%, #ebe5d9 100%);
+      color: var(--ink);
+    }
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    }
+    .title {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 3px; }
+    input, textarea, button, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn.secondary {
+      background: #2f4a3f;
+    }
+    .stack { display: grid; gap: 8px; }
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 20px;
+    }
+    .logs, .panel-content, .file-content {
+      background: #faf8f3;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      white-space: pre-wrap;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 12px;
+      overflow: auto;
+    }
+    .logs { min-height: 260px; max-height: 360px; }
+    .panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .panel-title {
+      margin: 0 0 6px 0;
+      font-size: 13px;
+      color: #36414a;
+      border-left: 4px solid var(--accent-2);
+      padding-left: 6px;
+    }
+    .panel-content {
+      min-height: 120px;
+      max-height: 220px;
+    }
+    .files-list {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #faf8f3;
+      max-height: 250px;
+      overflow: auto;
+    }
+    .entry {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #e9e3d7;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .entry:hover { background: #f1ebdf; }
+    .entry:last-child { border-bottom: none; }
+    .entry .type { color: var(--muted); }
+    .file-content { min-height: 220px; max-height: 380px; }
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card stack">
+      <h1 class="title">Workflow Console</h1>
+      <div class="grid-2">
+        <div>
+          <label for="sessionId">Session ID</label>
+          <input id="sessionId" value="session-main" />
+        </div>
+        <div>
+          <label for="cwdRelative">CWD relative (from LoL root)</label>
+          <input id="cwdRelative" value="." />
+        </div>
+      </div>
+      <div>
+        <label for="message">Prompt</label>
+        <textarea id="message" placeholder="요청을 입력하세요"></textarea>
+      </div>
+      <div class="grid-2">
+        <button id="sendBtn" class="btn">Run Workflow</button>
+        <label style="display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;">
+          <input id="enableFix" type="checkbox" checked style="width:auto;" />
+          Review FAIL 시 Codex Fix 수행
+        </label>
+      </div>
+      <div id="status" class="status"></div>
+      <div>
+        <h3 class="panel-title">Stream Logs</h3>
+        <div id="logs" class="logs"></div>
+      </div>
+      <div class="panel-grid">
+        <div><h3 class="panel-title">Plan</h3><div id="panel-plan" class="panel-content"></div></div>
+        <div><h3 class="panel-title">Tasks</h3><div id="panel-tasks" class="panel-content"></div></div>
+        <div><h3 class="panel-title">Patch</h3><div id="panel-patch" class="panel-content"></div></div>
+        <div><h3 class="panel-title">Review</h3><div id="panel-review" class="panel-content"></div></div>
+        <div><h3 class="panel-title">Files</h3><div id="panel-files" class="panel-content"></div></div>
+        <div><h3 class="panel-title">Git</h3><div id="panel-git" class="panel-content"></div></div>
+      </div>
+    </section>
+
+    <section class="card stack">
+      <h1 class="title">File Browser</h1>
+      <div class="grid-2">
+        <input id="browsePath" value="." />
+        <button id="refreshFiles" class="btn secondary">Refresh</button>
+      </div>
+      <div id="filesList" class="files-list"></div>
+      <div>
+        <h3 class="panel-title">File Content</h3>
+        <div id="filePath" class="status"></div>
+        <div id="fileContent" class="file-content"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+    const logs = el("logs");
+    const statusEl = el("status");
+    let source = null;
+
+    const panels = {
+      plan: el("panel-plan"),
+      tasks: el("panel-tasks"),
+      patch: el("panel-patch"),
+      review: el("panel-review"),
+      files: el("panel-files"),
+      git: el("panel-git"),
+      implement: el("panel-patch"),
+      fix: el("panel-patch")
+    };
+
+    function appendLog(line) {
+      logs.textContent += line + "\n";
+      logs.scrollTop = logs.scrollHeight;
+    }
+
+    function clearView() {
+      logs.textContent = "";
+      Object.values(panels).forEach((node) => { node.textContent = ""; });
+    }
+
+    async function startWorkflow() {
+      if (source) {
+        source.close();
+        source = null;
+      }
+      clearView();
+      const payload = {
+        session_id: el("sessionId").value.trim(),
+        message: el("message").value,
+        cwd_relative: el("cwdRelative").value.trim() || ".",
+        enable_fix: el("enableFix").checked
+      };
+      statusEl.textContent = "workflow 시작 중...";
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        statusEl.textContent = "workflow 시작 실패";
+        appendLog(await res.text());
+        return;
+      }
+      const data = await res.json();
+      statusEl.textContent = `workflow_job_id=${data.workflow_job_id}`;
+      source = new EventSource(`/api/workflow/stream/${data.workflow_job_id}`);
+      source.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          handleEvent(payload);
+        } catch (e) {
+          appendLog("parse error: " + String(e));
+        }
+      };
+      source.onerror = () => {
+        appendLog("[stream] disconnected");
+      };
+    }
+
+    function handleEvent(evt) {
+      const tag = `[${evt.seq}] ${evt.type}`;
+      if (evt.type === "runner_event") {
+        const p = evt.payload || {};
+        if (p.type === "log") {
+          appendLog(`${tag} [${evt.step}/${p.stream}] ${p.message}`);
+        } else {
+          appendLog(`${tag} [${evt.step}] ${JSON.stringify(p)}`);
+        }
+        return;
+      }
+      if (evt.type === "artifact") {
+        appendLog(`${tag} artifact=${evt.name}`);
+        if (panels[evt.name]) {
+          panels[evt.name].textContent = evt.content || "";
+        }
+        return;
+      }
+      appendLog(`${tag} ${JSON.stringify(evt)}`);
+      if (evt.type === "meta" && evt.event === "finished") {
+        statusEl.textContent = `완료: ${evt.status}`;
+        if (source) {
+          source.close();
+          source = null;
+        }
+      }
+      if (evt.type === "meta" && evt.event === "error") {
+        statusEl.textContent = `실패: ${evt.message || "unknown"}`;
+        if (source) {
+          source.close();
+          source = null;
+        }
+      }
+    }
+
+    async function refreshFiles() {
+      const path = el("browsePath").value.trim() || ".";
+      const res = await fetch(`/api/files?path=${encodeURIComponent(path)}`);
+      const list = el("filesList");
+      list.textContent = "";
+      if (!res.ok) {
+        list.textContent = await res.text();
+        return;
+      }
+      const data = await res.json();
+      for (const entry of data.entries) {
+        const row = document.createElement("div");
+        row.className = "entry";
+        row.innerHTML = `<span>${entry.path}</span><span class="type">${entry.type}</span>`;
+        row.onclick = () => {
+          if (entry.type === "dir") {
+            el("browsePath").value = entry.path;
+            refreshFiles();
+          } else {
+            loadFile(entry.path);
+          }
+        };
+        list.appendChild(row);
+      }
+    }
+
+    async function loadFile(path) {
+      const res = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
+      if (!res.ok) {
+        el("filePath").textContent = path;
+        el("fileContent").textContent = await res.text();
+        return;
+      }
+      const data = await res.json();
+      el("filePath").textContent = data.path;
+      el("fileContent").textContent = data.content;
+    }
+
+    el("sendBtn").onclick = () => startWorkflow();
+    el("refreshFiles").onclick = () => refreshFiles();
+    refreshFiles();
+  </script>
+</body>
+</html>
