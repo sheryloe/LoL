@@ -8,21 +8,13 @@ The runner executes codex/gemini/git commands and exposes API endpoints used by 
 - Root workspace: `/workspace/LoL`
 - Docker image includes `codex` and `gemini` CLIs.
 
-## Default Mode (No CLI Required)
-
-If `CODEX_CMD` and `GEMINI_CMD` are empty, runner uses built-in mock agents:
-
-- `runner/app/mock_agent.py`
-
-This keeps end-to-end workflow stable for development and tests.
-
 ## Real CLI Mode
 
 Runner mode control:
 
-- `RUNNER_AGENT_MODE=mock`: always mock
-- `RUNNER_AGENT_MODE=auto`: real only when binary + API key exist
-- `RUNNER_AGENT_MODE=real`: force real defaults (`codex`, `gemini`)
+- `RUNNER_AGENT_MODE=real`: strict real mode (default). Missing CLI/auth blocks workflow.
+- `RUNNER_AGENT_MODE=auto`: real-first mode without mock fallback.
+- `RUNNER_AGENT_MODE=mock`: debug-only fallback mode.
 
 Optional explicit environment variables:
 
@@ -33,10 +25,8 @@ Optional explicit environment variables:
 
 `CODEX_CMD` and `GEMINI_CMD` support `{prompt}` placeholder.
 
-If no `{prompt}` exists:
-
-- default runner command will append prompt only for non-explicit defaults
-- explicit command template requests are executed as-is
+If no `{prompt}` exists, default runner command appends prompt only for non-explicit defaults.
+Explicit `command_template` requests are executed as-is.
 
 Health endpoint (`GET /health`) includes runtime diagnosis:
 
@@ -47,6 +37,12 @@ Health endpoint (`GET /health`) includes runtime diagnosis:
 - `gemini_available`
 - `openai_api_key_present`
 - `gemini_api_key_present`
+
+Strict readiness endpoint (`GET /preflight/agents`) returns:
+
+- `ready`
+- `issues[]` with `code`, `message`, `action`
+- `checks` (CLI, command resolution, auth, git status)
 
 ## API
 

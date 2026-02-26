@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-02-26T06:00:00Z",
+  "scope": "docker-internal-only",
+  "checks": [
+    {
+      "name": "orchestrator_runner_preflight_endpoint",
+      "status": "pass",
+      "http_status": 200,
+      "ready": false,
+      "evidence": [
+        "CODEX_AUTH_MISSING",
+        "GEMINI_AUTH_MISSING"
+      ]
+    },
+    {
+      "name": "api_chat_blocked_when_not_ready",
+      "status": "pass",
+      "http_status": 412,
+      "detail_contains": "RUNNER_PREFLIGHT_FAILED"
+    },
+    {
+      "name": "runner_run_codex_blocked_when_not_ready",
+      "status": "pass",
+      "http_status": 412,
+      "detail_contains": "RUNNER_NOT_READY"
+    }
+  ],
+  "summary": {
+    "pass_count": 3,
+    "fail_count": 0
+  }
+}

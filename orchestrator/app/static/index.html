@@ -197,6 +197,10 @@
         </label>
       </div>
 
+      <div class="grid-2">
+        <button id="checkRunnerBtn" class="btn ghost">Check Runner Readiness</button>
+        <div id="runnerReadiness" class="status"></div>
+      </div>
       <div id="workflowStatus" class="status"></div>
       <div>
         <h3 class="panel-title">Stream Logs</h3>
@@ -294,11 +298,13 @@
     const el = (id) => document.getElementById(id);
     const logs = el("logs");
     const workflowStatus = el("workflowStatus");
+    const runnerReadiness = el("runnerReadiness");
     const settingsStatus = el("settingsStatus");
     const runHistory = el("runHistory");
     const conversationHistory = el("conversationHistory");
     let currentWorkflowJobId = null;
     let source = null;
+    let runnerReady = false;
 
     const panels = {
       plan: el("panel-plan"),
@@ -374,6 +380,35 @@
         }
       } catch (err) {
         setStatus(settingsStatus, `projects load failed: ${String(err.message || err)}`);
+      }
+    }
+
+    function summarizeRunnerIssues(issues) {
+      if (!Array.isArray(issues) || issues.length === 0) return "";
+      return issues.slice(0, 4).map((issue) => {
+        const msg = (issue && issue.message) ? issue.message : "unknown issue";
+        const action = (issue && issue.action) ? ` -> ${issue.action}` : "";
+        return `${msg}${action}`;
+      }).join(" | ");
+    }
+
+    async function refreshRunnerReadiness() {
+      const cwd = el("cwdRelative").value.trim() || ".";
+      try {
+        const data = await apiJson(`/api/runner/preflight?cwd_relative=${encodeURIComponent(cwd)}`);
+        if (data.ready) {
+          runnerReady = true;
+          setStatus(runnerReadiness, "runner ready (CLI/auth/git checks passed)");
+          return true;
+        }
+        runnerReady = false;
+        const detail = summarizeRunnerIssues(data.issues);
+        setStatus(runnerReadiness, `runner NOT ready: ${detail}`);
+        return false;
+      } catch (err) {
+        runnerReady = false;
+        setStatus(runnerReadiness, `runner preflight failed: ${String(err.message || err)}`);
+        return false;
       }
     }
 
@@ -495,6 +530,12 @@
         cwd_relative: el("cwdRelative").value.trim() || null,
         enable_fix: el("enableFix").checked
       };
+
+      const ready = await refreshRunnerReadiness();
+      if (!ready) {
+        setStatus(workflowStatus, "workflow start blocked: runner is not ready (install/auth first).");
+        return;
+      }
 
       if (!payload.project_id) {
         setStatus(workflowStatus, "project_id is required");
@@ -625,12 +666,14 @@
     el("saveSettingsBtn").onclick = () => saveSettings();
     el("refreshRoomLogsBtn").onclick = () => refreshRoomLogs();
     el("refreshFiles").onclick = () => refreshFiles();
+    el("checkRunnerBtn").onclick = () => refreshRunnerReadiness();
 
     (async () => {
       await refreshProjects();
       await refreshFiles();
       await loadSettings();
       await refreshRoomLogs();
+      await refreshRunnerReadiness();
     })();
   </script>
 </body>

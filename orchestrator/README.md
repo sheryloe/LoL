@@ -43,7 +43,7 @@ Create `.env` from `.env.example` and set:
 - `OPENAI_API_KEY`
 - `GEMINI_API_KEY`
 
-If `CODEX_CMD`/`GEMINI_CMD` are empty, runner uses built-in mock agents.
+Default is strict real mode. If CLI/auth is missing, workflow start is blocked by preflight with actionable errors.
 
 Recommended real command templates:
 
@@ -60,6 +60,12 @@ Health check:
 
 ```powershell
 curl http://localhost:8765/health
+```
+
+Strict preflight check:
+
+```powershell
+curl "http://localhost:8765/preflight/agents?cwd_relative=."
 ```
 
 ## Core Endpoints

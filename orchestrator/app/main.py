@@ -51,6 +51,14 @@ async def health() -> dict[str, str]:
     }
 
 
+@app.get("/api/runner/preflight")
+async def runner_preflight(cwd_relative: str = ".") -> dict:
+    try:
+        return await runner_client.preflight_report(cwd_relative, timeout_sec=8.0)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 @app.get("/")
 async def index() -> FileResponse:
     return FileResponse(static_dir / "index.html")
@@ -78,6 +86,10 @@ async def start_chat(req: ChatRequest) -> ChatResponse:
         gemini_cmd_template=settings.gemini_cmd_template,
         pipeline_steps=settings.pipeline_steps,
     )
+    try:
+        await runner_client.preflight(resolved.cwd_relative, timeout_sec=8.0)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=412, detail=str(exc)) from exc
     await conversation_store.append(
         resolved.project_id,
         {

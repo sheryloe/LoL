@@ -59,24 +59,26 @@ class RunnerClient:
             return response.json()
 
     async def preflight(self, cwd_relative: str, timeout_sec: float = 8.0) -> dict[str, Any]:
-        health_endpoint = f"{self.base_url}/health"
-        git_endpoint = f"{self.base_url}/git/status"
+        payload = await self.preflight_report(cwd_relative, timeout_sec=timeout_sec)
+        if payload.get("ready"):
+            return payload
+        issues = payload.get("issues") or []
+        messages = [str(item.get("message") or "") for item in issues if isinstance(item, dict)]
+        joined = " | ".join([m for m in messages if m.strip()]) or "runner is not ready"
+        raise RuntimeError(f"RUNNER_PREFLIGHT_FAILED: {joined}")
+
+    async def preflight_report(self, cwd_relative: str, timeout_sec: float = 8.0) -> dict[str, Any]:
+        endpoint = f"{self.base_url}/preflight/agents"
         try:
             async with httpx.AsyncClient(timeout=timeout_sec) as client:
-                health_response = await client.get(health_endpoint)
-                health_response.raise_for_status()
-                git_response = await client.get(git_endpoint, params={"cwd_relative": cwd_relative})
-                git_response.raise_for_status()
+                response = await client.get(endpoint, params={"cwd_relative": cwd_relative})
+                response.raise_for_status()
         except Exception as exc:  # pragma: no cover - network/runtime guard
             raise RuntimeError(f"RUNNER_PREFLIGHT_FAILED: {exc}") from exc
-
-        health_payload = health_response.json()
-        git_payload = git_response.json()
-        if int(git_payload.get("return_code") or 0) != 0:
-            raise RuntimeError(
-                f"RUNNER_PREFLIGHT_FAILED: git status failed ({git_payload.get('return_code')})"
-            )
-        return {"health": health_payload, "git_status": git_payload}
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise RuntimeError("RUNNER_PREFLIGHT_FAILED: invalid preflight response")
+        return payload
 
     async def stream_job(self, job_id: str) -> AsyncGenerator[dict[str, Any], None]:
         endpoint = f"{self.base_url}/stream/{job_id}"

@@ -33,10 +33,10 @@ def _default_real_gemini_cmd() -> list[str]:
 
 
 def _normalize_mode(value: str | None) -> str:
-    mode = (value or "auto").strip().lower()
+    mode = (value or "real").strip().lower()
     if mode in {"mock", "real", "auto"}:
         return mode
-    return "auto"
+    return "real"
 
 
 def _has_command(binary: str) -> bool:
@@ -77,36 +77,28 @@ def load_config() -> RunnerConfig:
     if codex_raw:
         codex_cmd = _cmd_from_raw(codex_raw)
         codex_source = "env:CODEX_CMD"
-    elif agent_mode == "real":
-        codex_cmd = _default_real_codex_cmd() if codex_available else _default_mock_cmd("codex")
-        codex_source = "default:real" if codex_available else "fallback:mock_missing_codex"
     elif agent_mode == "mock":
         codex_cmd = _default_mock_cmd("codex")
         codex_source = "default:mock"
+    elif agent_mode == "real":
+        codex_cmd = _default_real_codex_cmd() if codex_available else []
+        codex_source = "default:real" if codex_available else "missing:codex_cli"
     else:
-        if codex_available and openai_key_present:
-            codex_cmd = _default_real_codex_cmd()
-            codex_source = "default:auto_real"
-        else:
-            codex_cmd = _default_mock_cmd("codex")
-            codex_source = "default:auto_mock"
+        codex_cmd = _default_real_codex_cmd() if codex_available else []
+        codex_source = "default:auto_real" if codex_available else "missing:codex_cli"
 
     if gemini_raw:
         gemini_cmd = _cmd_from_raw(gemini_raw)
         gemini_source = "env:GEMINI_CMD"
-    elif agent_mode == "real":
-        gemini_cmd = _default_real_gemini_cmd() if gemini_available else _default_mock_cmd("gemini")
-        gemini_source = "default:real" if gemini_available else "fallback:mock_missing_gemini"
     elif agent_mode == "mock":
         gemini_cmd = _default_mock_cmd("gemini")
         gemini_source = "default:mock"
+    elif agent_mode == "real":
+        gemini_cmd = _default_real_gemini_cmd() if gemini_available else []
+        gemini_source = "default:real" if gemini_available else "missing:gemini_cli"
     else:
-        if gemini_available and gemini_key_present:
-            gemini_cmd = _default_real_gemini_cmd()
-            gemini_source = "default:auto_real"
-        else:
-            gemini_cmd = _default_mock_cmd("gemini")
-            gemini_source = "default:auto_mock"
+        gemini_cmd = _default_real_gemini_cmd() if gemini_available else []
+        gemini_source = "default:auto_real" if gemini_available else "missing:gemini_cli"
 
     return RunnerConfig(
         root_dir=root,

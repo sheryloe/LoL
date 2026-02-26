@@ -22,9 +22,9 @@ This repository runs a **co-worker chat tool** where one project room maps to on
 
 ## Runtime Modes
 
-1. Mock mode (default, stable): runner uses built-in mock agents.
-2. Auto mode: runner uses real CLI only when CLI binary + API key are present, otherwise mock.
-3. Real CLI mode: force real CLI in Docker and authenticate inside `lol-runner`.
+1. Real mode (default): runner requires real `codex`/`gemini` CLI + auth.
+2. Auto mode: real-first mode (no mock fallback). If requirements are missing, workflow start is blocked by preflight.
+3. Mock mode: debug-only mode, must be explicitly enabled (`RUNNER_AGENT_MODE=mock`).
 
 ## 10-Step Structured Build
 
@@ -32,6 +32,7 @@ Detailed docs:
 - [Step Index 1-10](./docs/steps/README.md)
 - [Roadmap](./ROADMAP_CHAT_PROJECT.md)
 - [Blog Structure](./docs/blog/README.md)
+- [Strict Real Execution Plan](./docs/STRICT_REAL_EXECUTION_PLAN.md)
 
 ## Backtest / Smoke Evidence
 
@@ -42,6 +43,8 @@ Latest run:
 - [Docker Stack 5-Step Raw JSON](./docs/backtest_results_2026-02-26_docker_stack.json)
 - [Docker CLI Mode 5-Step Report](./docs/BACKTEST_REPORT_2026-02-26_DOCKER_CLI_MODE.md)
 - [Docker CLI Mode 5-Step Raw JSON](./docs/backtest_results_2026-02-26_docker_cli_mode.json)
+- [Strict Preflight Report](./docs/BACKTEST_REPORT_2026-02-26_STRICT_PREFLIGHT.md)
+- [Strict Preflight Raw JSON](./docs/backtest_results_2026-02-26_strict_preflight.json)
 
 ## TODO (Visible on GitHub README)
 
@@ -84,7 +87,7 @@ docker compose up --build
 
 Create `D:\AI_Vibe\LoL\orchestrator\.env` from `.env.example` and set:
 
-- `RUNNER_AGENT_MODE=real` (or keep `auto`)
+- `RUNNER_AGENT_MODE=real`
 - `CODEX_CMD`
 - `GEMINI_CMD`
 - `OPENAI_API_KEY`
@@ -105,6 +108,12 @@ Runtime verification:
 
 ```powershell
 curl http://localhost:8765/health
+```
+
+Strict readiness verification:
+
+```powershell
+curl "http://localhost:8765/preflight/agents?cwd_relative=."
 ```
 
 Check fields:

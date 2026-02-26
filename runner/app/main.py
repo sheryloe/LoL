@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import subprocess
 import sys
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -22,6 +25,235 @@ config = load_config()
 jobs = JobManager()
 
 
+def _is_mock_source(source: str) -> bool:
+    return "mock" in source.lower()
+
+
+async def _codex_auth_ready() -> tuple[bool, str]:
+    if config.openai_api_key_present:
+        return True, "OPENAI_API_KEY present"
+    try:
+        result = await asyncio.to_thread(
+            subprocess.run,
+            ["codex", "login", "status"],
+            capture_output=True,
+            text=True,
+            timeout=8,
+        )
+    except FileNotFoundError:
+        return False, "codex command not found"
+    except subprocess.TimeoutExpired:
+        return False, "codex login status timed out"
+    output = (result.stdout or result.stderr or "").strip()
+    if result.returncode == 0:
+        return True, output or "codex login status ok"
+    return False, output or "not logged in"
+
+
+def _gemini_settings_auth_ready() -> tuple[bool, str]:
+    settings_path = Path.home() / ".gemini" / "settings.json"
+    if not settings_path.exists():
+        return False, "settings.json not found"
+    try:
+        payload = json.loads(settings_path.read_text(encoding="utf-8"))
+    except Exception:
+        return False, "settings.json unreadable"
+    auth_keys = ("selectedAuthType", "authType", "authMethod", "auth_type", "auth_method")
+    for key in auth_keys:
+        value = payload.get(key)
+        if value:
+            return True, f"{key}={value}"
+    return False, "auth type not configured in settings.json"
+
+
+def _gemini_auth_ready() -> tuple[bool, str]:
+    if config.gemini_api_key_present:
+        return True, "GEMINI_API_KEY present"
+    if (os.getenv("GOOGLE_GENAI_USE_VERTEXAI") or "").strip():
+        return True, "GOOGLE_GENAI_USE_VERTEXAI enabled"
+    if (os.getenv("GOOGLE_GENAI_USE_GCA") or "").strip():
+        return True, "GOOGLE_GENAI_USE_GCA enabled"
+    return _gemini_settings_auth_ready()
+
+
+async def _build_preflight_payload(cwd: Path) -> dict:
+    issues: list[dict[str, str]] = []
+    checks: dict[str, object] = {
+        "agent_mode": config.agent_mode,
+        "codex_source": config.codex_source,
+        "gemini_source": config.gemini_source,
+        "codex_cli_available": config.codex_available,
+        "gemini_cli_available": config.gemini_available,
+        "codex_command_ready": bool(config.codex_cmd),
+        "gemini_command_ready": bool(config.gemini_cmd),
+    }
+
+    if config.agent_mode == "mock":
+        issues.append(
+            {
+                "code": "MOCK_MODE_ACTIVE",
+                "message": "RUNNER_AGENT_MODE=mock is active. Real CLI mode is required.",
+                "action": "Set RUNNER_AGENT_MODE=real and restart Docker Compose.",
+            }
+        )
+    if _is_mock_source(config.codex_source):
+        issues.append(
+            {
+                "code": "CODEX_MOCK_SOURCE",
+                "message": f"codex source is `{config.codex_source}`.",
+                "action": "Disable mock mode and use a real codex command.",
+            }
+        )
+    if _is_mock_source(config.gemini_source):
+        issues.append(
+            {
+                "code": "GEMINI_MOCK_SOURCE",
+                "message": f"gemini source is `{config.gemini_source}`.",
+                "action": "Disable mock mode and use a real gemini command.",
+            }
+        )
+
+    if not config.codex_available:
+        issues.append(
+            {
+                "code": "CODEX_CLI_MISSING",
+                "message": "Codex CLI is not installed in runner container.",
+                "action": "Install `@openai/codex` in runner image and rebuild containers.",
+            }
+        )
+    if not config.gemini_available:
+        issues.append(
+            {
+                "code": "GEMINI_CLI_MISSING",
+                "message": "Gemini CLI is not installed in runner container.",
+                "action": "Install `@google/gemini-cli` in runner image and rebuild containers.",
+            }
+        )
+    if not config.codex_cmd:
+        issues.append(
+            {
+                "code": "CODEX_CMD_UNRESOLVED",
+                "message": "codex command template could not be resolved.",
+                "action": "Set valid CODEX_CMD or ensure default codex CLI command is available.",
+            }
+        )
+    if not config.gemini_cmd:
+        issues.append(
+            {
+                "code": "GEMINI_CMD_UNRESOLVED",
+                "message": "gemini command template could not be resolved.",
+                "action": "Set valid GEMINI_CMD or ensure default gemini CLI command is available.",
+            }
+        )
+
+    codex_auth_ready, codex_auth_detail = await _codex_auth_ready()
+    checks["codex_auth_ready"] = codex_auth_ready
+    checks["codex_auth_detail"] = codex_auth_detail
+    if not codex_auth_ready:
+        issues.append(
+            {
+                "code": "CODEX_AUTH_MISSING",
+                "message": f"Codex auth is not ready ({codex_auth_detail}).",
+                "action": "Set OPENAI_API_KEY or run `docker exec -it lol-runner codex login`.",
+            }
+        )
+
+    gemini_auth_ready, gemini_auth_detail = _gemini_auth_ready()
+    checks["gemini_auth_ready"] = gemini_auth_ready
+    checks["gemini_auth_detail"] = gemini_auth_detail
+    if not gemini_auth_ready:
+        issues.append(
+            {
+                "code": "GEMINI_AUTH_MISSING",
+                "message": f"Gemini auth is not ready ({gemini_auth_detail}).",
+                "action": (
+                    "Set GEMINI_API_KEY (or GOOGLE_GENAI_USE_VERTEXAI/GOOGLE_GENAI_USE_GCA) "
+                    "or configure /root/.gemini/settings.json."
+                ),
+            }
+        )
+
+    git_result = await run_git(["status", "--short", "--branch"], cwd)
+    checks["git_status_return_code"] = int(git_result.get("return_code") or 0)
+    if checks["git_status_return_code"] != 0:
+        issues.append(
+            {
+                "code": "GIT_STATUS_FAILED",
+                "message": f"git status failed ({checks['git_status_return_code']}).",
+                "action": "Check RUNNER_ROOT_DIR and cwd_relative path mapping.",
+            }
+        )
+
+    return {
+        "ready": len(issues) == 0,
+        "issues": issues,
+        "checks": checks,
+        "cwd": str(cwd),
+        "health": {
+            "root_dir": str(config.root_dir),
+            "write_enabled": str(config.write_enabled),
+            "agent_mode": config.agent_mode,
+            "codex_source": config.codex_source,
+            "gemini_source": config.gemini_source,
+        },
+        "git_status": git_result,
+    }
+
+
+async def _ensure_codex_ready_or_raise() -> None:
+    if _is_mock_source(config.codex_source):
+        raise HTTPException(
+            status_code=412,
+            detail="RUNNER_NOT_READY: codex is configured in mock mode; set RUNNER_AGENT_MODE=real.",
+        )
+    if not config.codex_available:
+        raise HTTPException(
+            status_code=412,
+            detail="RUNNER_NOT_READY: codex CLI missing. Install @openai/codex and rebuild.",
+        )
+    if not config.codex_cmd:
+        raise HTTPException(
+            status_code=412,
+            detail="RUNNER_NOT_READY: codex command unresolved. Set CODEX_CMD or install codex CLI.",
+        )
+    auth_ready, auth_detail = await _codex_auth_ready()
+    if not auth_ready:
+        raise HTTPException(
+            status_code=412,
+            detail=(
+                "RUNNER_NOT_READY: codex auth missing "
+                f"({auth_detail}). Set OPENAI_API_KEY or run `docker exec -it lol-runner codex login`."
+            ),
+        )
+
+
+def _ensure_gemini_ready_or_raise() -> None:
+    if _is_mock_source(config.gemini_source):
+        raise HTTPException(
+            status_code=412,
+            detail="RUNNER_NOT_READY: gemini is configured in mock mode; set RUNNER_AGENT_MODE=real.",
+        )
+    if not config.gemini_available:
+        raise HTTPException(
+            status_code=412,
+            detail="RUNNER_NOT_READY: gemini CLI missing. Install @google/gemini-cli and rebuild.",
+        )
+    if not config.gemini_cmd:
+        raise HTTPException(
+            status_code=412,
+            detail="RUNNER_NOT_READY: gemini command unresolved. Set GEMINI_CMD or install gemini CLI.",
+        )
+    auth_ready, auth_detail = _gemini_auth_ready()
+    if not auth_ready:
+        raise HTTPException(
+            status_code=412,
+            detail=(
+                "RUNNER_NOT_READY: gemini auth missing "
+                f"({auth_detail}). Set GEMINI_API_KEY or configure /root/.gemini/settings.json."
+            ),
+        )
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {
@@ -38,6 +270,15 @@ async def health() -> dict[str, str]:
     }
 
 
+@app.get("/preflight/agents")
+async def preflight_agents(cwd_relative: str = ".") -> dict:
+    try:
+        cwd = resolve_cwd(config.root_dir, cwd_relative)
+    except PathSecurityError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return await _build_preflight_payload(cwd)
+
+
 def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
@@ -49,6 +290,8 @@ async def run_codex(req: RunRequest) -> RunResponse:
     except PathSecurityError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     explicit_template = bool(req.command_template and req.command_template.strip())
+    if not explicit_template:
+        await _ensure_codex_ready_or_raise()
     try:
         base_cmd = parse_command_template(req.command_template) if explicit_template else config.codex_cmd
     except ValueError as exc:
@@ -67,6 +310,8 @@ async def run_gemini(req: RunRequest) -> RunResponse:
     except PathSecurityError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     explicit_template = bool(req.command_template and req.command_template.strip())
+    if not explicit_template:
+        _ensure_gemini_ready_or_raise()
     try:
         base_cmd = parse_command_template(req.command_template) if explicit_template else config.gemini_cmd
     except ValueError as exc:

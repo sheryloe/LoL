@@ -9,7 +9,7 @@ services:
     environment:
       RUNNER_ROOT_DIR: /workspace/LoL
       RUNNER_WRITE_ENABLED: ${RUNNER_WRITE_ENABLED:-false}
-      RUNNER_AGENT_MODE: ${RUNNER_AGENT_MODE:-auto}
+      RUNNER_AGENT_MODE: ${RUNNER_AGENT_MODE:-real}
       CODEX_CMD: ${CODEX_CMD:-}
       GEMINI_CMD: ${GEMINI_CMD:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
