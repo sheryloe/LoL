@@ -1,42 +1,48 @@
 # Host Runner (Windows)
 
-`runner`는 Windows Host에서 실행되며, `codex`/`gemini`/`git`를 실제 subprocess로 실행합니다.
-컨테이너 내부에서는 CLI를 실행하지 않습니다.
+Runner는 Windows Host에서 `codex`, `gemini`, `git`를 subprocess로 실행하는 API 서비스입니다.
 
-## Endpoints
-
-- `POST /run/codex`
-- `POST /run/gemini`
-- `GET /stream/{job_id}` (SSE)
-- `GET /jobs/{job_id}`
-- `GET /git/status`
-- `POST /git/commit` (`RUNNER_WRITE_ENABLED=true`일 때만)
-- `POST /git/push` (`RUNNER_WRITE_ENABLED=true`일 때만)
-
-## Security
-
-- 모든 `cwd_relative`는 `RUNNER_ROOT_DIR` 하위만 허용됩니다.
-- 절대경로/드라이브 경로/path traversal(`..`)로 루트 밖 접근 시 요청이 거부됩니다.
-
-## Run
+## 실행
 
 ```powershell
 cd D:\AI_Vibe\LoL\runner
 .\start_runner.ps1
 ```
 
-### Optional env vars
+## 환경 변수
 
 - `RUNNER_ROOT_DIR` (default: `D:\AI_Vibe\LoL`)
 - `RUNNER_WRITE_ENABLED` (default: `false`)
 - `CODEX_CMD` (default: `codex`)
 - `GEMINI_CMD` (default: `gemini`)
 
-`CODEX_CMD`, `GEMINI_CMD`는 공백으로 구분한 커맨드 토큰입니다.
-프롬프트를 특정 위치에 넣으려면 `{prompt}` 플레이스홀더를 사용하세요.
+`CODEX_CMD`, `GEMINI_CMD`는 공백 분리 토큰으로 해석되며, `{prompt}` 플레이스홀더를 지원합니다.
 
 예시:
 
 ```powershell
 $env:GEMINI_CMD = "gemini --prompt {prompt}"
 ```
+
+## API
+
+### 실행
+
+- `POST /run/codex`
+- `POST /run/gemini`
+- `GET /jobs/{job_id}`
+- `POST /jobs/{job_id}/cancel`
+- `GET /stream/{job_id}` (SSE)
+
+### Git
+
+- `GET /git/status`
+- `POST /git/commit` (`RUNNER_WRITE_ENABLED=true` 필요)
+- `POST /git/push` (`RUNNER_WRITE_ENABLED=true` 필요)
+
+## 보안 제약
+
+1. 모든 `cwd_relative`는 `RUNNER_ROOT_DIR` 하위로 제한
+2. 절대 경로/드라이브 경로/path traversal(`..`) 차단
+3. write 비활성 상태에서 commit/push 차단
+

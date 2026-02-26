@@ -12,3 +12,7 @@ env/
 
 .DS_Store
 Thumbs.db
+
+orchestrator/data/
+orchestrator/data_backtest/
+tmp_backtest/

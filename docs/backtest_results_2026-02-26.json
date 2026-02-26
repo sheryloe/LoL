@@ -1,0 +1,171 @@
+{
+  "timestamp": "2026-02-26 10:53:10",
+  "project_id": "bt_room_1772070753",
+  "total": 22,
+  "passed": 21,
+  "failed": 1,
+  "results": [
+    {
+      "test": "runner_health",
+      "ok": true,
+      "detail": {
+        "status": "ok",
+        "root_dir": "D:\\AI_Vibe\\LoL",
+        "write_enabled": "False"
+      }
+    },
+    {
+      "test": "runner_git_status",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "test": "runner_run_codex_create",
+      "ok": true,
+      "detail": {
+        "job_id": "9d110cdc-ba62-4c18-bc42-c72ed97cabd3",
+        "status": "queued"
+      }
+    },
+    {
+      "test": "runner_run_codex_complete",
+      "ok": true,
+      "detail": "completed"
+    },
+    {
+      "test": "runner_cancel_job",
+      "ok": true,
+      "detail": {
+        "job_id": "ca19e007-cbc7-4f65-a900-4fc20db6483b",
+        "canceled": true,
+        "status": "canceled"
+      }
+    },
+    {
+      "test": "runner_git_commit_blocked",
+      "ok": true,
+      "detail": "{\"detail\":\"write operations are disabled\"}"
+    },
+    {
+      "test": "runner_git_push_blocked",
+      "ok": true,
+      "detail": "{\"detail\":\"write operations are disabled\"}"
+    },
+    {
+      "test": "orch_health",
+      "ok": true,
+      "detail": {
+        "status": "ok",
+        "runner_base_url": "http://127.0.0.1:8765",
+        "root_dir": "D:\\AI_Vibe\\LoL",
+        "journal_dir": "D:\\AI_Vibe\\LoL\\orchestrator\\data_backtest\\journals",
+        "projects_dir": "D:\\AI_Vibe\\LoL\\orchestrator\\data_backtest\\projects"
+      }
+    },
+    {
+      "test": "orch_ui_root",
+      "ok": true,
+      "detail": "len=21147"
+    },
+    {
+      "test": "orch_project_create",
+      "ok": true,
+      "detail": {
+        "schema_version": 1,
+        "project_id": "bt_room_1772070753",
+        "title": "Backtest Room",
+        "default_session_id": "bt_room_1772070753",
+        "default_cwd_relative": ".",
+        "default_enable_fix": true,
+        "codex_cmd_template": "codex",
+        "gemini_cmd_template": "gemini",
+        "write_policy": "read_only",
+        "created_at": "2026-02-26T01:52:35.051691+00:00",
+        "updated_at": "2026-02-26T01:52:35.051691+00:00"
+      }
+    },
+    {
+      "test": "orch_project_settings_put",
+      "ok": true,
+      "detail": {
+        "schema_version": 1,
+        "project_id": "bt_room_1772070753",
+        "title": "Backtest Room Updated",
+        "default_session_id": "bt_room_1772070753-session",
+        "default_cwd_relative": ".",
+        "default_enable_fix": true,
+        "codex_cmd_template": "codex",
+        "gemini_cmd_template": "gemini",
+        "write_policy": "read_only",
+        "created_at": "2026-02-26T01:52:35.051691+00:00",
+        "updated_at": "2026-02-26T01:52:35.064797+00:00"
+      }
+    },
+    {
+      "test": "orch_projects_list",
+      "ok": true,
+      "detail": "count=4"
+    },
+    {
+      "test": "orch_chat_start",
+      "ok": true,
+      "detail": {
+        "project_id": "bt_room_1772070753",
+        "workflow_job_id": "f384128a-6005-4e27-aaa9-6bf804ca11f3",
+        "session_id": "bt_room_1772070753-session",
+        "status": "queued"
+      }
+    },
+    {
+      "test": "orch_workflow_complete",
+      "ok": true,
+      "detail": "completed"
+    },
+    {
+      "test": "orch_conversation_read",
+      "ok": true,
+      "detail": "items=46"
+    },
+    {
+      "test": "orch_runs_list",
+      "ok": true,
+      "detail": "items=1"
+    },
+    {
+      "test": "orch_run_detail",
+      "ok": true,
+      "detail": "completed"
+    },
+    {
+      "test": "orch_workflow_cancel_request",
+      "ok": true,
+      "detail": {
+        "workflow_job_id": "b3a9f70f-d959-43bb-a10a-3ae9999c3340",
+        "status": "canceled"
+      }
+    },
+    {
+      "test": "orch_workflow_canceled",
+      "ok": true,
+      "detail": "canceled"
+    },
+    {
+      "test": "orch_preflight_fail_fast",
+      "ok": false,
+      "detail": {
+        "status": "running",
+        "elapsed_sec": 25.76
+      }
+    },
+    {
+      "test": "orch_files_list",
+      "ok": true,
+      "detail": "entries=9"
+    },
+    {
+      "test": "orch_file_read",
+      "ok": true,
+      "detail": "len=1265"
+    }
+  ]
+}
