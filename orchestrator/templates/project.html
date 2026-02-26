@@ -1,0 +1,248 @@
+﻿{% extends "base.html" %}
+{% block content %}
+{% if error %}
+<section class="panel error-panel">
+  <h2>오류</h2>
+  <p>{{ error }}</p>
+</section>
+{% endif %}
+
+{% if info %}
+<section class="panel info-panel">
+  <h2>알림</h2>
+  <p>{{ info }}</p>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h1>프로젝트: {{ project.project_id }}</h1>
+  <p>제목: {{ project.title or "-" }}</p>
+  <p>생성 시각: {{ project.created_at or "unknown" }}</p>
+</section>
+
+<section class="panel">
+  <h2>CLI 인증 상태</h2>
+  <p>이 프로젝트는 <strong>API Key 주입이 아닌 CLI 로그인 세션</strong>으로만 Codex/Gemini를 실행합니다.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>에이전트</th>
+        <th>설치</th>
+        <th>인증</th>
+        <th>상세</th>
+        <th>로그인 명령</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for agent_name in ["codex", "gemini"] %}
+      {% set status = worker_auth_status.get(agent_name, {}) %}
+      <tr>
+        <td>{{ agent_name }}</td>
+        <td>{{ "OK" if status.get("installed") else "MISSING" }}</td>
+        <td>{{ "READY" if status.get("authenticated") else "LOGIN REQUIRED" }}</td>
+        <td><code>{{ status.get("detail", "-") }}</code></td>
+        <td><code>{{ status.get("login_command", "-") }}</code></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p><strong>주의:</strong> 로그인 세션이 없으면 워커 실행이 차단됩니다.</p>
+</section>
+
+<section class="panel">
+  <h2>협업 채팅 실행 (Codex + Gemini)</h2>
+  <p>한 번 실행하면 같은 세션에서 두 CLI가 순차적으로 답변하면서 토론을 이어갑니다.</p>
+  <form method="post" action="/ui/projects/{{ project.project_id }}/cowork/run" accept-charset="UTF-8" class="form-grid">
+    <label>요청 프롬프트</label>
+    <textarea name="prompt" rows="6" placeholder="예: 이슈 원인 분석하고 수정안까지 두 에이전트가 협업해" required></textarea>
+
+    <label>세션 ID (선택)</label>
+    <input type="text" name="session_id" placeholder="비우면 새 채팅방 생성" />
+
+    <label>라운드 수</label>
+    <select name="rounds">
+      <option value="1" selected>1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+
+    <label>실행 순서</label>
+    <select name="order">
+      <option value="codex_then_gemini" selected>Codex → Gemini</option>
+      <option value="gemini_then_codex">Gemini → Codex</option>
+    </select>
+
+    <label>Codex CLI 인자 (선택)</label>
+    <input type="text" name="codex_cli_args" placeholder="예: --model gpt-5-codex --sandbox workspace-write" />
+
+    <label>Gemini CLI 인자 (선택)</label>
+    <input type="text" name="gemini_cli_args" placeholder="예: --yolo" />
+
+    <label>Admin Token</label>
+    <input type="password" name="admin_token" placeholder="기본값: change-me" />
+
+    <label>쓰기 허용</label>
+    <input type="checkbox" name="write_enabled" value="true" />
+
+    <button type="submit">협업 실행</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>최근 협업 대화</h2>
+  {% if latest_session and latest_session.messages %}
+    <p>session_id: <code>{{ latest_session.session_id }}</code> · updated: {{ latest_session.updated_at }}</p>
+    <div class="chat-thread">
+      {% for msg in latest_session.messages[-20:] %}
+      <article class="chat-msg {{ msg.role }}">
+        <header>
+          <strong>{{ msg.role }}</strong>
+          {% if msg.worker %}<span class="chip">{{ msg.worker }}</span>{% endif %}
+          <time>{{ msg.created_at }}</time>
+        </header>
+        <pre>{{ msg.content }}</pre>
+      </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>아직 협업 대화가 없습니다.</p>
+  {% endif %}
+  {% if sessions %}
+    <p>세션 목록:
+      {% for s in sessions[:5] %}
+      <code>{{ s.session_id }}</code>{% if not loop.last %}, {% endif %}
+      {% endfor %}
+    </p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>단일 워커 실행 (디버그용)</h2>
+  <p><code>admin token</code>은 쓰기 권한 확인용입니다. <strong>쓰기 허용 체크 + 올바른 Token</strong>이 있어야 결과 파일이 저장됩니다.</p>
+  <p><strong>CLI 인증 순서:</strong> 먼저 위 명령으로 Codex/Gemini 로그인 후 실행하세요.</p>
+  <p><strong>자동 재시도:</strong> 실행 로그에서 <code>400 / Bad Request</code> 패턴이 감지되면 워커가 자동으로 재시도합니다.</p>
+  <form method="post" action="/ui/projects/{{ project.project_id }}/run" accept-charset="UTF-8" class="form-grid">
+    <label>워커</label>
+    <select name="worker_name">
+      {% for worker in workers %}
+      <option value="{{ worker }}">{{ worker }}</option>
+      {% endfor %}
+    </select>
+
+    <label>프롬프트</label>
+    <textarea name="prompt" rows="6" placeholder="실행할 작업 내용을 입력하세요" required></textarea>
+
+    <label>모델 (Ollama 전용)</label>
+    <input type="text" name="model" placeholder="qwen2.5:7b-instruct" />
+
+    <label>CLI 인자 (Codex/Gemini)</label>
+    <input type="text" name="cli_args" placeholder="--some-flag value" />
+
+    <label>Admin Token</label>
+    <input type="password" name="admin_token" placeholder="기본값: change-me" />
+
+    <label>쓰기 허용</label>
+    <input type="checkbox" name="write_enabled" value="true" />
+
+    <button type="submit">실행</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Notion 스텝 기록 (블로그형)</h2>
+  <p>배경 → 개념 → 구현 → 코드/검증 → 트러블슈팅 → 다음 단계 구조로 노션에 바로 게시합니다.</p>
+  <p><strong>400 Bad Request 자동 재시도</strong>가 적용되어 있습니다.</p>
+  <form method="post" action="/ui/projects/{{ project.project_id }}/notion/publish" accept-charset="UTF-8" class="form-grid">
+    <label>Notion Token</label>
+    <input type="password" name="notion_token" placeholder="비워두면 서버 환경변수 NOTION_TOKEN 사용" />
+
+    <label>Parent Page ID</label>
+    <input type="text" name="parent_page_id" value="{{ default_notion_parent_page_id or '' }}" placeholder="예: 31361b8ed53c81ae94a6e9c6e74dc6ae" />
+
+    <label>Step 제목</label>
+    <input type="text" name="step_title" placeholder="예: Step 02 - Retrieval Quality" required />
+
+    <label>한 줄 요약</label>
+    <textarea name="one_line_summary" rows="2" placeholder="이번 단계 핵심 요약" required></textarea>
+
+    <label>문제 배경</label>
+    <textarea name="background" rows="4" placeholder="왜 이 작업이 필요했는지" required></textarea>
+
+    <label>핵심 개념 정리</label>
+    <textarea name="core_concepts" rows="4" placeholder="아키텍처/개념 설명" required></textarea>
+
+    <label>구현 상세</label>
+    <textarea name="implementation_details" rows="6" placeholder="변경 파일, 핵심 로직, 설계 의도" required></textarea>
+
+    <label>검증</label>
+    <textarea name="test_notes" rows="4" placeholder="테스트 환경/명령/결과" required></textarea>
+
+    <label>트러블슈팅</label>
+    <textarea name="troubleshooting" rows="4" placeholder="실패 사례, 원인, 해결" ></textarea>
+
+    <label>다음 단계</label>
+    <textarea name="next_steps" rows="3" placeholder="우선순위 다음 작업" required></textarea>
+
+    <button type="submit">Notion 발행</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>탭</h2>
+  <div class="tabs">
+    <button class="tab-btn active" data-target="spec">명세</button>
+    <button class="tab-btn" data-target="tasks">작업</button>
+    <button class="tab-btn" data-target="codex_outputs">Codex 결과</button>
+    <button class="tab-btn" data-target="gemini_outputs">Gemini 결과</button>
+    <button class="tab-btn" data-target="discussion">토론</button>
+    <button class="tab-btn" data-target="artifacts">아티팩트</button>
+  </div>
+
+  {% for tab_name, files in project.tabs.items() %}
+  <section class="tab-content {% if tab_name == 'spec' %}active{% endif %}" id="tab-{{ tab_name }}">
+    {% if tab_name == 'spec' %}
+      <h3>명세</h3>
+    {% elif tab_name == 'tasks' %}
+      <h3>작업</h3>
+    {% elif tab_name == 'codex_outputs' %}
+      <h3>Codex 결과</h3>
+    {% elif tab_name == 'gemini_outputs' %}
+      <h3>Gemini 결과</h3>
+    {% elif tab_name == 'discussion' %}
+      <h3>토론</h3>
+    {% elif tab_name == 'artifacts' %}
+      <h3>아티팩트</h3>
+    {% else %}
+      <h3>{{ tab_name }}</h3>
+    {% endif %}
+
+    {% if files %}
+      {% for file in files %}
+      <article class="file-card">
+        <h4>{{ file.name }}</h4>
+        <p>{{ file.relative_path }} · {{ file.updated_at }}</p>
+        <pre>{{ file.content_preview }}</pre>
+      </article>
+      {% endfor %}
+    {% else %}
+    <p>이 탭에는 파일이 없습니다.</p>
+    {% endif %}
+  </section>
+  {% endfor %}
+</section>
+
+<script>
+const buttons = document.querySelectorAll('.tab-btn');
+const contents = document.querySelectorAll('.tab-content');
+buttons.forEach((button) => {
+  button.addEventListener('click', () => {
+    const target = button.dataset.target;
+    buttons.forEach((b) => b.classList.remove('active'));
+    contents.forEach((c) => c.classList.remove('active'));
+    button.classList.add('active');
+    const panel = document.getElementById(`tab-${target}`);
+    if (panel) panel.classList.add('active');
+  });
+});
+</script>
+{% endblock %}

@@ -1,163 +1,73 @@
-﻿# LoL Co-Worker Chat Workspace
+﻿# LoL Multi-Agent Co-Worker (CLI Login Mode)
 
-This repository runs a **co-worker chat tool** where one project room maps to one collaboration context.
+현재 저장소 기준 MVP는 `orchestrator` 서비스(포트 `8000`)입니다.  
+핵심 목적은 **Codex + Gemini CLI 협업 채팅방 실행**입니다.
 
-- Orchestrator (Docker): workflow control + web UI + room state
-- Runner (Docker): codex/gemini/git subprocess execution
-- Data-first traceability: conversation, runs, journals are persisted per project
-- Project-level RAG foundation: ingest/search/context injection per room
+## Current State (2026-02-26)
 
-## Current Mode
+- Git remote: `https://github.com/sheryloe/LoL.git`
+- Main app: [`orchestrator`](./orchestrator)
+- UI: `http://localhost:8000/`
+- 인증 모델: API Key 주입이 아니라 **CLI 로그인 세션 공유 방식**
+- Codex: `Logged in using ChatGPT` 확인됨 (환경별로 재로그인 가능)
+- Gemini: `settings.json not found` 상태면 아직 로그인 전
 
-- Active source of truth: `D:\AI_Vibe\LoL`
-- Branch: `main`
-- Remote: `https://github.com/sheryloe/LoL.git`
+## What Changed
 
-## Architecture
+1. `orchestrator`를 단일 워커 폼에서 **협업 채팅 실행(Codex+Gemini)** 구조로 확장.
+2. CLI 설치/인증 상태를 API+UI에서 즉시 확인하도록 추가.
+3. 인증 미완료 시 실행을 `412`로 차단하여 오작동 대신 명확한 오류를 반환.
+4. Gemini/Codex TLS 인증서 이슈(`self-signed certificate in certificate chain`) 대응:
+   `TLS_CA_CERT_FILE=/certs/eprism.pem` + `NODE_EXTRA_CA_CERTS/SSL_CERT_FILE/REQUESTS_CA_BUNDLE`.
 
-1. User sends a chat request to Orchestrator (`POST /api/chat`)
-2. Orchestrator resolves project defaults (session, cwd, fix-mode)
-3. Workflow pipeline runs (`plan -> implement -> review -> fix(optional)`)
-4. Runner executes codex/gemini (or mock agent) and streams events
-5. Orchestrator persists conversation and run states by project room
-
-## Runtime Modes
-
-1. Real mode (default): runner requires real `codex`/`gemini` CLI + auth.
-2. Auto mode: real-first mode (no mock fallback). If requirements are missing, workflow start is blocked by preflight.
-3. Mock mode: debug-only mode, must be explicitly enabled (`RUNNER_AGENT_MODE=mock`).
-
-## 10-Step Structured Build
-
-Detailed docs:
-- [Step Index 1-10](./docs/steps/README.md)
-- [Roadmap](./ROADMAP_CHAT_PROJECT.md)
-- [Blog Structure](./docs/blog/README.md)
-- [Strict Real Execution Plan](./docs/STRICT_REAL_EXECUTION_PLAN.md)
-
-## 4-Step Consolidated Log (Latest)
-
-- [4-Step Consolidated Index](./docs/mega-steps/README.md)
-- [Step 01 - Architecture Baseline](./docs/mega-steps/STEP-01-architecture-baseline.md)
-- [Step 02 - Workflow and Persistence Core](./docs/mega-steps/STEP-02-workflow-persistence-core.md)
-- [Step 03 - Real Execution and Reliability Hardening](./docs/mega-steps/STEP-03-real-execution-reliability.md)
-- [Step 04 - RAG and Dockerized Multi-CLI Orchestrator MVP](./docs/mega-steps/STEP-04-rag-and-dockerized-mvp.md)
-- [Notion Sync Log (2026-02-26)](./docs/mega-steps/NOTION_SYNC_2026-02-26.md)
-
-## RAG Track (Step 1/10)
-
-- [RAG Step Index](./docs/rag-steps/README.md)
-- [RAG-STEP-01 Project Knowledge Base Foundation](./docs/rag-steps/RAG-STEP-01-project-knowledge-base.md)
-
-New RAG endpoints:
-
-- `GET /api/projects/{project_id}/rag/documents`
-- `POST /api/projects/{project_id}/rag/documents`
-- `POST /api/projects/{project_id}/rag/search`
-
-Chat request extension:
-
-- `include_rag` (bool)
-- `rag_top_k` (int)
-- `rag_max_chars` (int)
-
-## Backtest / Smoke Evidence
-
-Latest run:
-- [Step10 Smoke Report](./docs/BACKTEST_REPORT_2026-02-26_STEP10.md)
-- [Step10 Raw JSON](./docs/backtest_results_2026-02-26_step10.json)
-- [Docker Stack 5-Step Report](./docs/BACKTEST_REPORT_2026-02-26_DOCKER_STACK.md)
-- [Docker Stack 5-Step Raw JSON](./docs/backtest_results_2026-02-26_docker_stack.json)
-- [Docker CLI Mode 5-Step Report](./docs/BACKTEST_REPORT_2026-02-26_DOCKER_CLI_MODE.md)
-- [Docker CLI Mode 5-Step Raw JSON](./docs/backtest_results_2026-02-26_docker_cli_mode.json)
-- [Strict Preflight Report](./docs/BACKTEST_REPORT_2026-02-26_STRICT_PREFLIGHT.md)
-- [Strict Preflight Raw JSON](./docs/backtest_results_2026-02-26_strict_preflight.json)
-- [Auth UI Flow Report](./docs/BACKTEST_REPORT_2026-02-26_AUTH_UI_FLOW.md)
-- [Auth UI Flow Raw JSON](./docs/backtest_results_2026-02-26_auth_ui_flow.json)
-- [RAG Step1 Report](./docs/BACKTEST_REPORT_2026-02-26_RAG_STEP1.md)
-- [RAG Step1 Raw JSON](./docs/backtest_results_2026-02-26_rag_step1.json)
-
-## TODO (Visible on GitHub README)
-
-### P0
-
-1. Add automated regression tests for preflight fail-fast and workflow cancel invariants.
-2. Add clearer runtime diagnostics in UI for CLI/auth misconfiguration.
-3. Add step-pipeline UI editor (`plan/implement/review/fix`) instead of API-only control.
-4. RAG Step 02: retrieval quality controls (source weighting, dedup, citation format).
-
-### P1
-
-1. Per-project step pipeline toggle/order (`plan/implement/review/fix` on/off) in UI.
-2. Per-project CLI argument templates and override policy.
-3. Artifact timeline UX improvement (step status, artifacts, run summary in one thread view).
-4. Run-to-run file diff viewer.
-5. Guarded git flow in UI (`status -> draft -> commit -> push`).
-
-### P2
-
-1. Permission tiers (`read_only`, `write_limited`, `full_write`).
-2. Replace static token style with stronger auth + secret loading.
-3. Audit trail model and API/UI.
-4. Test pyramid expansion (unit/integration/e2e/failure path).
-5. Observability (trace_id, metrics, structured logs, dashboard hooks).
-
-## Run
-
-### 1) Docker Stack (Orchestrator + Runner)
+## Quick Start
 
 ```powershell
 cd D:\AI_Vibe\LoL\orchestrator
-docker compose up --build
+docker compose up --build -d
 ```
 
-### 2) Open
+Open:
 
-- `http://localhost:8080`
+- `http://localhost:8000/`
 
-### 3) Real CLI/Auth (Optional)
-
-Create `D:\AI_Vibe\LoL\orchestrator\.env` from `.env.example` and set:
-
-- `RUNNER_AGENT_MODE=real`
-- `CODEX_CMD`
-- `GEMINI_CMD`
-- `OPENAI_API_KEY`
-- `GEMINI_API_KEY`
-
-Recommended command templates:
-
-- `CODEX_CMD=codex exec --skip-git-repo-check --full-auto {prompt}`
-- `GEMINI_CMD=gemini --prompt {prompt} --yolo`
-
-Optional interactive auth inside Docker:
+Health:
 
 ```powershell
-docker exec -it lol-runner codex login
+curl http://localhost:8000/health
 ```
 
-If device auth page returns Cloudflare 400, use the UI path:
+## CLI Login Commands
 
-1. `Runner Auth -> Open OpenAI API Keys`
-2. Paste keys into `Save Runtime Keys`
-3. Re-check `Runner Readiness`
-
-Runtime verification:
+Codex:
 
 ```powershell
-curl http://localhost:8765/health
+docker exec -it web-orchestrator-v1 codex login --device-auth
+docker exec web-orchestrator-v1 codex login status
 ```
 
-Strict readiness verification:
+Gemini:
 
 ```powershell
-curl "http://localhost:8765/preflight/agents?cwd_relative=."
+docker exec -it web-orchestrator-v1 gemini
+# then run /auth inside gemini CLI
 ```
 
-Check fields:
+Auth status API:
 
-- `agent_mode`
-- `codex_source`
-- `gemini_source`
-- `openai_api_key_present`
-- `gemini_api_key_present`
+```powershell
+curl http://localhost:8000/api/projects/demo_project/workers/auth/status
+```
+
+## Documentation
+
+- Orchestrator 상세 문서: [orchestrator/README.md](./orchestrator/README.md)
+- Notion 발행 플레이북: [orchestrator/docs/NOTION_STEP_PLAYBOOK.md](./orchestrator/docs/NOTION_STEP_PLAYBOOK.md)
+- MVP 오케스트레이터: [orchestrator/mvp/README.md](./orchestrator/mvp/README.md)
+
+## TODO
+
+1. Gemini 로그인 완료 후 협업 라운드 E2E 스모크 결과 문서화.
+2. 협업 대화 세션 선택/필터 UI 개선.
+3. 협업 실행 결과(diff, artifact 링크) 요약 뷰 추가.
+4. 회귀 테스트 자동화(pytest + API integration).

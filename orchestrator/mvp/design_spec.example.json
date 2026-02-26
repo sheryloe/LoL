@@ -1,0 +1,17 @@
+{
+  "project": "demo_project",
+  "Task_A": {
+    "agent_type": "gemini",
+    "instruction": "Analyze the current codebase and propose a refactoring checklist for MVP stability.",
+    "rag_query": "project structure docker orchestrator mvp",
+    "cwd": ".",
+    "cli_args": []
+  },
+  "Task_B": {
+    "agent_type": "codex",
+    "instruction": "Implement the highest-priority refactor from Task_A output and provide a concise patch summary.",
+    "rag_query": "refactor checklist highest priority implementation",
+    "cwd": ".",
+    "cli_args": []
+  }
+}
