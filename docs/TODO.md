@@ -8,6 +8,7 @@ Last update: 2026-02-26
 2. Add automated tests for preflight fail-fast behavior.
 3. Add automated tests for workflow cancel invariant (no further step after cancel).
 4. Improve UI error copy with actionable diagnosis when runner link fails.
+5. RAG Step 02: retrieval quality tuning (source weighting, deduplication, citation format).
 
 ## P1 (Near-term)
 
@@ -16,6 +17,8 @@ Last update: 2026-02-26
 3. Step 13: Unified timeline UX for events + artifacts + status.
 4. Step 14: Run diff and changed-file summary view.
 5. Step 15: Guarded git operation flow.
+6. RAG Step 03: hybrid retrieval (keyword + semantic embeddings).
+7. RAG Step 04: per-project source governance (allowlist/denylist).
 
 ## P2 (Mid-term)
 
@@ -37,3 +40,7 @@ Last update: 2026-02-26
 8. Run state persistence.
 9. Preflight fail-fast gate.
 10. Workflow cancel control.
+
+## Done (RAG Track)
+
+1. RAG-STEP-01 project knowledge base foundation (ingest/search/context injection).

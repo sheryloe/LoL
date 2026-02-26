@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 PipelineStep = Literal["plan", "implement", "review", "fix"]
 DEFAULT_PIPELINE_STEPS: list[PipelineStep] = ["plan", "implement", "review", "fix"]
@@ -14,6 +14,9 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
     cwd_relative: str | None = None
     enable_fix: bool | None = None
+    include_rag: bool = True
+    rag_top_k: int = Field(default=4, ge=1, le=20)
+    rag_max_chars: int = Field(default=2200, ge=200, le=12000)
 
 
 class ResolvedChatRequest(BaseModel):
@@ -129,3 +132,39 @@ class RunnerAuthRuntimeKeysRequest(BaseModel):
 
 class RunnerCodexDeviceAuthStartRequest(BaseModel):
     session_id: str = Field(default="runner-auth-codex", min_length=1)
+
+
+class RagIngestRequest(BaseModel):
+    source_type: Literal["text", "file"] = "text"
+    title: str | None = Field(default=None, max_length=180)
+    content: str | None = None
+    source_path: str | None = None
+    tags: list[str] = Field(default_factory=list)
+
+    @field_validator("tags")
+    @classmethod
+    def normalize_tags(cls, value: list[str]) -> list[str]:
+        normalized: list[str] = []
+        for item in value:
+            clean = item.strip().lower()
+            if clean and clean not in normalized:
+                normalized.append(clean)
+        return normalized[:12]
+
+    @model_validator(mode="after")
+    def validate_source_payload(self) -> "RagIngestRequest":
+        if self.source_type == "text":
+            if not self.content or not self.content.strip():
+                raise ValueError("content is required when source_type=text")
+            return self
+        if self.source_type == "file":
+            if not self.source_path or not self.source_path.strip():
+                raise ValueError("source_path is required when source_type=file")
+            return self
+        raise ValueError("unsupported source_type")
+
+
+class RagSearchRequest(BaseModel):
+    query: str = Field(min_length=1)
+    top_k: int = Field(default=5, ge=1, le=20)
+    max_chars: int = Field(default=2400, ge=200, le=12000)

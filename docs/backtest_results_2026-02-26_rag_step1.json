@@ -1,0 +1,289 @@
+﻿{
+  "timestamp_utc": "2026-02-26T06:37:38Z",
+  "env": {
+    "execution": "docker-internal-only",
+    "orchestrator": "lol-orchestrator",
+    "runner": "lol-runner"
+  },
+  "health": {
+    "status": 200,
+    "body": {
+      "status": "ok",
+      "runner_base_url": "http://runner:8765",
+      "root_dir": "/workspace/LoL",
+      "journal_dir": "/app/data/journals",
+      "projects_dir": "/app/data/projects"
+    }
+  },
+  "project_settings": {
+    "status": 200,
+    "body": {
+      "schema_version": 1,
+      "project_id": "rag-step1-room",
+      "title": "RAG Step1 Room",
+      "default_session_id": "rag-step1-room",
+      "default_cwd_relative": ".",
+      "default_enable_fix": true,
+      "codex_cmd_template": "",
+      "gemini_cmd_template": "",
+      "pipeline_steps": [
+        "plan",
+        "implement",
+        "review",
+        "fix"
+      ],
+      "write_policy": "read_only",
+      "created_at": "2026-02-26T06:36:33.421028+00:00",
+      "updated_at": "2026-02-26T06:36:33.421028+00:00"
+    }
+  },
+  "runner_auth_runtime": {
+    "status": 200,
+    "body": {
+      "codex": {
+        "ready": true,
+        "detail": "OPENAI_API_KEY present"
+      },
+      "gemini": {
+        "ready": true,
+        "detail": "GEMINI_API_KEY present"
+      },
+      "runtime_openai_api_key_present": true,
+      "runtime_gemini_api_key_present": true
+    }
+  },
+  "ingest_text": {
+    "status": 200,
+    "body": {
+      "project_id": "rag-step1-room",
+      "item": {
+        "document_id": "doc_55aaa35095f8",
+        "title": "Step1 acceptance criteria",
+        "source_type": "text",
+        "source_path": null,
+        "tags": [
+          "rag",
+          "step1",
+          "acceptance"
+        ],
+        "created_at": "2026-02-26T06:37:39.036722+00:00",
+        "updated_at": "2026-02-26T06:37:39.036722+00:00",
+        "char_count": 113,
+        "chunk_count": 1
+      }
+    }
+  },
+  "rag_search": {
+    "status": 200,
+    "hit_count": 3,
+    "body": {
+      "project_id": "rag-step1-room",
+      "query": "step1 rag context injection acceptance",
+      "top_k": 5,
+      "hits": [
+        {
+          "document_id": "doc_55aaa35095f8",
+          "chunk_id": "c1",
+          "title": "Step1 acceptance criteria",
+          "source_path": null,
+          "tags": [
+            "rag",
+            "step1",
+            "acceptance"
+          ],
+          "score": 3.3099,
+          "excerpt": "A chat room is a project. Step1 requires project-level RAG ingestion, retrieval, and context injection into chat."
+        },
+        {
+          "document_id": "doc_9009d579975b",
+          "chunk_id": "c1",
+          "title": "MVP ??",
+          "source_path": null,
+          "tags": [
+            "mvp",
+            "rag",
+            "plan"
+          ],
+          "score": 0.89598,
+          "excerpt": "??? ??? ???? ???. Codex? Gemini? ???? ????. Step 1? RAG ?? ??? ????."
+        },
+        {
+          "document_id": "doc_63caaf872542",
+          "chunk_id": "c1",
+          "title": "Repository README",
+          "source_path": "README.md",
+          "tags": [
+            "readme",
+            "source"
+          ],
+          "score": 0.74136,
+          "excerpt": "﻿# LoL Co-Worker Chat Workspace This repository runs a **co-worker chat tool** where one project room maps to one collaboration context. - Orchestrator (Docker): workflow control + web UI + room state - Runner (Docker): codex/gemini/git subprocess execution - Data-first traceability: conversation, runs, journals are..."
+        }
+      ],
+      "context": "[1] Step1 acceptance criteria | source=inline-text | score=3.3099\nA chat room is a project. Step1 requires project-level RAG ingestion, retrieval, and context injection into chat.\n\n[2] MVP ?? | source=inline-text | score=0.89598\n??? ??? ???? ???. Codex? Gemini? ???? ????. Step 1? RAG ?? ??? ????.\n\n[3] Repository README | source=README.md | score=0.74136\n﻿# LoL Co-Worker Chat Workspace This repository runs a **co-worker chat tool** where one project room maps to one collaboration context. - Orchestrator (Docker): workflow control + web UI + room state - Runner (Docker): codex/gemini/git subprocess execution - Data-first traceability: conversation, runs, journals are..."
+    }
+  },
+  "chat_start": {
+    "status": 200,
+    "body": {
+      "project_id": "rag-step1-room",
+      "workflow_job_id": "714cdc53-0e66-4ef8-b48a-01fa7f33f0dd",
+      "session_id": "rag-step1-room",
+      "status": "queued"
+    }
+  },
+  "workflow_final": {
+    "status": 200,
+    "body": {
+      "workflow_job_id": "714cdc53-0e66-4ef8-b48a-01fa7f33f0dd",
+      "project_id": "rag-step1-room",
+      "session_id": "rag-step1-room",
+      "status": "failed",
+      "cwd_relative": ".",
+      "started_at": "2026-02-26T06:37:39.775495+00:00",
+      "ended_at": "2026-02-26T06:37:49.860871+00:00",
+      "artifacts": {}
+    }
+  },
+  "conversation_rag_events": {
+    "status": 200,
+    "total_items": 101,
+    "rag_related_count": 7,
+    "tail": [
+      {
+        "timestamp": "2026-02-26T06:36:33.550163+00:00",
+        "source": "rag",
+        "project_id": "rag-step1-room",
+        "session_id": "rag-step1-room",
+        "event": "document_ingested",
+        "document_id": "doc_9009d579975b",
+        "title": "MVP ??",
+        "source_type": "text",
+        "source_path": null,
+        "chunk_count": 1
+      },
+      {
+        "timestamp": "2026-02-26T06:36:33.597546+00:00",
+        "source": "rag",
+        "project_id": "rag-step1-room",
+        "session_id": "rag-step1-room",
+        "event": "document_ingested",
+        "document_id": "doc_63caaf872542",
+        "title": "Repository README",
+        "source_type": "file",
+        "source_path": "README.md",
+        "chunk_count": 6
+      },
+      {
+        "timestamp": "2026-02-26T06:36:34.333618+00:00",
+        "source": "user_message",
+        "project_id": "rag-step1-room",
+        "session_id": "rag-step1-room",
+        "message": "Step 1 RAG ???? ?? ?? ???? 3? ????",
+        "rag_enabled": true,
+        "rag_hit_count": 4
+      },
+      {
+        "timestamp": "2026-02-26T06:36:34.343079+00:00",
+        "source": "rag",
+        "project_id": "rag-step1-room",
+        "session_id": "rag-step1-room",
+        "event": "context_attached",
+        "query": "Step 1 RAG ???? ?? ?? ???? 3? ????",
+        "top_k": 4,
+        "hit_count": 4,
+        "hits": [
+          {
+            "document_id": "doc_63caaf872542",
+            "chunk_id": "c4",
+            "title": "Repository README",
+            "score": 3.77158,
+            "source_path": "README.md"
+          },
+          {
+            "document_id": "doc_63caaf872542",
+            "chunk_id": "c3",
+            "title": "Repository README",
+            "score": 3.27956,
+            "source_path": "README.md"
+          },
+          {
+            "document_id": "doc_63caaf872542",
+            "chunk_id": "c2",
+            "title": "Repository README",
+            "score": 3.26908,
+            "source_path": "README.md"
+          },
+          {
+            "document_id": "doc_9009d579975b",
+            "chunk_id": "c1",
+            "title": "MVP ??",
+            "score": 2.68794,
+            "source_path": null
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-02-26T06:37:39.055640+00:00",
+        "source": "rag",
+        "project_id": "rag-step1-room",
+        "session_id": "rag-step1-room",
+        "event": "document_ingested",
+        "document_id": "doc_55aaa35095f8",
+        "title": "Step1 acceptance criteria",
+        "source_type": "text",
+        "source_path": null,
+        "chunk_count": 1
+      },
+      {
+        "timestamp": "2026-02-26T06:37:39.683572+00:00",
+        "source": "user_message",
+        "project_id": "rag-step1-room",
+        "session_id": "rag-step1-room",
+        "message": "Based on Step1 RAG docs, suggest next three priorities.",
+        "rag_enabled": true,
+        "rag_hit_count": 4
+      },
+      {
+        "timestamp": "2026-02-26T06:37:39.696408+00:00",
+        "source": "rag",
+        "project_id": "rag-step1-room",
+        "session_id": "rag-step1-room",
+        "event": "context_attached",
+        "query": "Based on Step1 RAG docs, suggest next three priorities.",
+        "top_k": 4,
+        "hit_count": 4,
+        "hits": [
+          {
+            "document_id": "doc_63caaf872542",
+            "chunk_id": "c3",
+            "title": "Repository README",
+            "score": 2.98142,
+            "source_path": "README.md"
+          },
+          {
+            "document_id": "doc_63caaf872542",
+            "chunk_id": "c2",
+            "title": "Repository README",
+            "score": 2.22892,
+            "source_path": "README.md"
+          },
+          {
+            "document_id": "doc_55aaa35095f8",
+            "chunk_id": "c1",
+            "title": "Step1 acceptance criteria",
+            "score": 1.65495,
+            "source_path": null
+          },
+          {
+            "document_id": "doc_9009d579975b",
+            "chunk_id": "c1",
+            "title": "MVP ??",
+            "score": 0.89598,
+            "source_path": null
+          }
+        ]
+      }
+    ]
+  }
+}

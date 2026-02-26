@@ -5,6 +5,7 @@ This repository runs a **co-worker chat tool** where one project room maps to on
 - Orchestrator (Docker): workflow control + web UI + room state
 - Runner (Docker): codex/gemini/git subprocess execution
 - Data-first traceability: conversation, runs, journals are persisted per project
+- Project-level RAG foundation: ingest/search/context injection per room
 
 ## Current Mode
 
@@ -34,6 +35,23 @@ Detailed docs:
 - [Blog Structure](./docs/blog/README.md)
 - [Strict Real Execution Plan](./docs/STRICT_REAL_EXECUTION_PLAN.md)
 
+## RAG Track (Step 1/10)
+
+- [RAG Step Index](./docs/rag-steps/README.md)
+- [RAG-STEP-01 Project Knowledge Base Foundation](./docs/rag-steps/RAG-STEP-01-project-knowledge-base.md)
+
+New RAG endpoints:
+
+- `GET /api/projects/{project_id}/rag/documents`
+- `POST /api/projects/{project_id}/rag/documents`
+- `POST /api/projects/{project_id}/rag/search`
+
+Chat request extension:
+
+- `include_rag` (bool)
+- `rag_top_k` (int)
+- `rag_max_chars` (int)
+
 ## Backtest / Smoke Evidence
 
 Latest run:
@@ -47,6 +65,8 @@ Latest run:
 - [Strict Preflight Raw JSON](./docs/backtest_results_2026-02-26_strict_preflight.json)
 - [Auth UI Flow Report](./docs/BACKTEST_REPORT_2026-02-26_AUTH_UI_FLOW.md)
 - [Auth UI Flow Raw JSON](./docs/backtest_results_2026-02-26_auth_ui_flow.json)
+- [RAG Step1 Report](./docs/BACKTEST_REPORT_2026-02-26_RAG_STEP1.md)
+- [RAG Step1 Raw JSON](./docs/backtest_results_2026-02-26_rag_step1.json)
 
 ## TODO (Visible on GitHub README)
 
@@ -55,6 +75,7 @@ Latest run:
 1. Add automated regression tests for preflight fail-fast and workflow cancel invariants.
 2. Add clearer runtime diagnostics in UI for CLI/auth misconfiguration.
 3. Add step-pipeline UI editor (`plan/implement/review/fix`) instead of API-only control.
+4. RAG Step 02: retrieval quality controls (source weighting, dedup, citation format).
 
 ### P1
 

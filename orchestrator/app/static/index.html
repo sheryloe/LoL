@@ -292,6 +292,33 @@
 
         <button id="saveSettingsBtn" class="btn">Save Settings</button>
 
+        <h3 class="panel-title">RAG Knowledge Base (Step 1)</h3>
+        <div class="grid-2">
+          <input id="ragDocTitle" placeholder="Document title (optional)" />
+          <input id="ragDocTags" placeholder="tags comma separated (optional)" />
+        </div>
+        <div class="grid-2">
+          <textarea id="ragDocContent" placeholder="Paste text to ingest (optional if source path is set)"></textarea>
+          <div class="stack">
+            <input id="ragSourcePath" placeholder="or source file path (e.g. docs/README.md)" />
+            <button id="ingestRagDocBtn" class="btn secondary">Ingest RAG Document</button>
+            <label style="display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;">
+              <input id="includeRagInChat" type="checkbox" checked style="width:auto;" />
+              include RAG context in workflow
+            </label>
+            <input id="ragTopK" type="number" min="1" max="20" value="4" />
+          </div>
+        </div>
+        <div class="grid-2">
+          <input id="ragQuery" placeholder="RAG query for preview/search" />
+          <button id="searchRagBtn" class="btn ghost">Search RAG</button>
+        </div>
+        <div id="ragStatus" class="status"></div>
+        <h3 class="panel-title">RAG Documents</h3>
+        <div id="ragDocs" class="panel-content"></div>
+        <h3 class="panel-title">RAG Search Hits / Context</h3>
+        <div id="ragHits" class="panel-content"></div>
+
         <h3 class="panel-title">Projects</h3>
         <div id="projectList" class="project-list"></div>
 
@@ -328,6 +355,9 @@
     const settingsStatus = el("settingsStatus");
     const runHistory = el("runHistory");
     const conversationHistory = el("conversationHistory");
+    const ragStatus = el("ragStatus");
+    const ragDocs = el("ragDocs");
+    const ragHits = el("ragHits");
     let currentWorkflowJobId = null;
     let source = null;
     let runnerReady = false;
@@ -587,6 +617,103 @@
       conversationHistory.textContent = rows.length ? rows.join("\n") : "(no conversation events)";
     }
 
+    function renderRagDocuments(items) {
+      const rows = (items || []).slice(0, 80).map((item) => {
+        const title = item.title || item.document_id;
+        const source = item.source_path || item.source_type || "text";
+        const chunks = item.chunk_count || 0;
+        const chars = item.char_count || 0;
+        return `${item.document_id} | ${title} | src=${source} | chunks=${chunks} | chars=${chars}`;
+      });
+      ragDocs.textContent = rows.length ? rows.join("\n") : "(no RAG documents)";
+    }
+
+    function renderRagHits(hits, context) {
+      const hitRows = (hits || []).map((hit, idx) => {
+        return `[${idx + 1}] score=${hit.score} | ${hit.title} | ${hit.source_path || "inline-text"}\n${hit.excerpt}`;
+      });
+      const blocks = [];
+      if (hitRows.length) {
+        blocks.push(hitRows.join("\n\n"));
+      }
+      if (context) {
+        blocks.push("---- context preview ----\n" + context);
+      }
+      ragHits.textContent = blocks.length ? blocks.join("\n\n") : "(no hits)";
+    }
+
+    async function refreshRagDocuments() {
+      const projectId = el("projectId").value.trim();
+      if (!projectId) {
+        setStatus(ragStatus, "project_id is required");
+        return;
+      }
+      try {
+        const data = await apiJson(`/api/projects/${encodeURIComponent(projectId)}/rag/documents`);
+        renderRagDocuments(data.items || []);
+        setStatus(ragStatus, `RAG docs loaded: ${data.items ? data.items.length : 0}`);
+      } catch (err) {
+        setStatus(ragStatus, `RAG docs load failed: ${String(err.message || err)}`);
+      }
+    }
+
+    async function ingestRagDocument() {
+      const projectId = el("projectId").value.trim();
+      if (!projectId) {
+        setStatus(ragStatus, "project_id is required");
+        return;
+      }
+      const sourcePath = el("ragSourcePath").value.trim();
+      const body = {
+        source_type: sourcePath ? "file" : "text",
+        title: el("ragDocTitle").value.trim() || null,
+        tags: el("ragDocTags").value
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v.length > 0)
+      };
+      if (sourcePath) {
+        body.source_path = sourcePath;
+      } else {
+        body.content = el("ragDocContent").value;
+      }
+      try {
+        const data = await apiJson(`/api/projects/${encodeURIComponent(projectId)}/rag/documents`, {
+          method: "POST",
+          body: JSON.stringify(body)
+        });
+        const item = data.item || {};
+        setStatus(ragStatus, `RAG document ingested: ${item.document_id || "-"}`);
+        await refreshRagDocuments();
+      } catch (err) {
+        setStatus(ragStatus, `RAG ingest failed: ${String(err.message || err)}`);
+      }
+    }
+
+    async function searchRag() {
+      const projectId = el("projectId").value.trim();
+      const query = el("ragQuery").value.trim();
+      if (!projectId) {
+        setStatus(ragStatus, "project_id is required");
+        return;
+      }
+      if (!query) {
+        setStatus(ragStatus, "RAG query is required");
+        return;
+      }
+      const topK = Number(el("ragTopK").value) || 4;
+      try {
+        const data = await apiJson(`/api/projects/${encodeURIComponent(projectId)}/rag/search`, {
+          method: "POST",
+          body: JSON.stringify({ query, top_k: Math.max(1, Math.min(20, topK)), max_chars: 2400 })
+        });
+        renderRagHits(data.hits || [], data.context || "");
+        setStatus(ragStatus, `RAG search done: ${data.hits ? data.hits.length : 0} hits`);
+      } catch (err) {
+        setStatus(ragStatus, `RAG search failed: ${String(err.message || err)}`);
+      }
+    }
+
     async function refreshRoomLogs() {
       const projectId = el("projectId").value.trim();
       if (!projectId) {
@@ -613,6 +740,7 @@
         const data = await apiJson(`/api/projects/${encodeURIComponent(projectId)}/settings`);
         applySettings(data);
         await refreshRoomLogs();
+        await refreshRagDocuments();
         setStatus(settingsStatus, `loaded settings: ${projectId}`);
       } catch (err) {
         setStatus(settingsStatus, `load failed: ${String(err.message || err)}`);
@@ -636,6 +764,7 @@
         applySettings(data);
         await refreshProjects();
         await refreshRoomLogs();
+        await refreshRagDocuments();
         setStatus(settingsStatus, `created project: ${projectId}`);
       } catch (err) {
         setStatus(settingsStatus, `create failed: ${String(err.message || err)}`);
@@ -664,6 +793,7 @@
         applySettings(data);
         await refreshProjects();
         await refreshRoomLogs();
+        await refreshRagDocuments();
         setStatus(settingsStatus, `saved settings: ${projectId}`);
       } catch (err) {
         setStatus(settingsStatus, `save failed: ${String(err.message || err)}`);
@@ -682,7 +812,9 @@
         session_id: el("sessionId").value.trim() || null,
         message: el("message").value,
         cwd_relative: el("cwdRelative").value.trim() || null,
-        enable_fix: el("enableFix").checked
+        enable_fix: el("enableFix").checked,
+        include_rag: el("includeRagInChat").checked,
+        rag_top_k: Math.max(1, Math.min(20, Number(el("ragTopK").value) || 4))
       };
 
       const ready = await refreshRunnerReadiness();
@@ -819,6 +951,8 @@
     el("createProjectBtn").onclick = () => createProject();
     el("saveSettingsBtn").onclick = () => saveSettings();
     el("refreshRoomLogsBtn").onclick = () => refreshRoomLogs();
+    el("ingestRagDocBtn").onclick = () => ingestRagDocument();
+    el("searchRagBtn").onclick = () => searchRag();
     el("refreshFiles").onclick = () => refreshFiles();
     el("checkRunnerBtn").onclick = () => refreshRunnerReadiness();
     el("openCodexLoginBtn").onclick = async () => {
@@ -838,6 +972,7 @@
       await refreshFiles();
       await loadSettings();
       await refreshRoomLogs();
+      await refreshRagDocuments();
       await loadAuthUrls();
       await refreshAuthRuntime();
       await refreshRunnerReadiness();

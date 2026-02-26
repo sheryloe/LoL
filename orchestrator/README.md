@@ -5,6 +5,7 @@ The orchestrator provides:
 1. Web UI for project-room workflow operations.
 2. Workflow control plane (queue/run/cancel/stream).
 3. Project settings + conversation + run persistence APIs.
+4. Project-level RAG ingest/search/context APIs.
 
 It does **not** execute codex/gemini directly. Execution is delegated to the `runner` service.
 
@@ -88,10 +89,14 @@ Web UI auth flow:
 - `GET /api/projects/{project_id}/conversation`
 - `GET /api/projects/{project_id}/runs`
 - `GET /api/projects/{project_id}/runs/{workflow_job_id}`
+- `GET /api/projects/{project_id}/rag/documents`
+- `POST /api/projects/{project_id}/rag/documents`
+- `POST /api/projects/{project_id}/rag/search`
 
 ## Data Layout
 
 - `data/projects/<project_id>/settings.json`
 - `data/projects/<project_id>/conversation.ndjson`
+- `data/projects/<project_id>/rag_index.json`
 - `data/projects/<project_id>/runs/<workflow_job_id>.json`
 - `data/journals/<session_id>.ndjson`

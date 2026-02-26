@@ -20,11 +20,14 @@ from .models import (
     ProjectSettings,
     ProjectSettingsPatchRequest,
     ProjectSettingsPutRequest,
+    RagIngestRequest,
+    RagSearchRequest,
     RunnerAuthRuntimeKeysRequest,
     RunnerCodexDeviceAuthStartRequest,
 )
 from .models import ResolvedChatRequest
 from .project_rooms import ProjectRoomStore
+from .rag_store import ProjectRagStore
 from .runner_client import RunnerClient
 from .run_store import WorkflowRunStore
 from .security import PathSecurityError, resolve_under_root
@@ -35,6 +38,7 @@ journal = JournalStore(config.journal_dir)
 project_store = ProjectRoomStore(config.projects_dir)
 conversation_store = ProjectConversationStore(config.projects_dir)
 run_store = WorkflowRunStore(config.projects_dir)
+rag_store = ProjectRagStore(config.projects_dir, config.root_dir)
 runner_client = RunnerClient(config.runner_base_url)
 workflow_manager = WorkflowManager(runner_client, journal, conversation_store, run_store)
 app = FastAPI(title="LoL Orchestrator", version="0.1.0")
@@ -131,29 +135,79 @@ async def start_chat(req: ChatRequest) -> ChatResponse:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    session_id = (req.session_id or settings.default_session_id).strip()
+    cwd_relative = (req.cwd_relative or settings.default_cwd_relative).strip() or "."
+    enable_fix = settings.default_enable_fix if req.enable_fix is None else req.enable_fix
+    try:
+        await runner_client.preflight(cwd_relative, timeout_sec=8.0)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=412, detail=str(exc)) from exc
+
+    message_for_agent = req.message
+    rag_hits: list[dict] = []
+    if req.include_rag:
+        rag_payload = await rag_store.build_context(
+            settings.project_id,
+            req.message,
+            top_k=req.rag_top_k,
+            max_chars=req.rag_max_chars,
+        )
+        rag_context = rag_payload.get("context", "")
+        rag_hits = rag_payload.get("hits", [])
+        if rag_context:
+            message_for_agent = (
+                "Use the following retrieved project context only when it is relevant. "
+                "If context conflicts with the latest instruction, call out uncertainty and continue safely.\n\n"
+                "### Retrieved Project Context\n"
+                f"{rag_context}\n\n"
+                "### User Request\n"
+                f"{req.message}"
+            )
+
     resolved = ResolvedChatRequest(
         project_id=settings.project_id,
-        session_id=(req.session_id or settings.default_session_id).strip(),
-        message=req.message,
-        cwd_relative=(req.cwd_relative or settings.default_cwd_relative).strip() or ".",
-        enable_fix=settings.default_enable_fix if req.enable_fix is None else req.enable_fix,
+        session_id=session_id,
+        message=message_for_agent,
+        cwd_relative=cwd_relative,
+        enable_fix=enable_fix,
         codex_cmd_template=settings.codex_cmd_template,
         gemini_cmd_template=settings.gemini_cmd_template,
         pipeline_steps=settings.pipeline_steps,
     )
-    try:
-        await runner_client.preflight(resolved.cwd_relative, timeout_sec=8.0)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=412, detail=str(exc)) from exc
     await conversation_store.append(
         resolved.project_id,
         {
             "source": "user_message",
             "project_id": resolved.project_id,
             "session_id": resolved.session_id,
-            "message": resolved.message,
+            "message": req.message,
+            "rag_enabled": req.include_rag,
+            "rag_hit_count": len(rag_hits),
         },
     )
+    if rag_hits:
+        await conversation_store.append(
+            resolved.project_id,
+            {
+                "source": "rag",
+                "project_id": resolved.project_id,
+                "session_id": resolved.session_id,
+                "event": "context_attached",
+                "query": req.message,
+                "top_k": req.rag_top_k,
+                "hit_count": len(rag_hits),
+                "hits": [
+                    {
+                        "document_id": hit.get("document_id"),
+                        "chunk_id": hit.get("chunk_id"),
+                        "title": hit.get("title"),
+                        "score": hit.get("score"),
+                        "source_path": hit.get("source_path"),
+                    }
+                    for hit in rag_hits
+                ],
+            },
+        )
     job = await workflow_manager.start(resolved)
     await conversation_store.append(
         resolved.project_id,
@@ -280,6 +334,90 @@ async def get_project_conversation(project_id: str, limit: int = Query(default=2
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     items = await conversation_store.read(settings.project_id, limit=limit)
     return {"project_id": settings.project_id, "items": items}
+
+
+@app.get("/api/projects/{project_id}/rag/documents")
+async def list_project_rag_documents(project_id: str) -> dict:
+    try:
+        settings = await project_store.get_settings(project_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    items = await rag_store.list_documents(settings.project_id)
+    return {"project_id": settings.project_id, "items": items}
+
+
+@app.post("/api/projects/{project_id}/rag/documents")
+async def ingest_project_rag_document(project_id: str, req: RagIngestRequest) -> dict:
+    try:
+        settings = await project_store.get_settings(project_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    try:
+        if req.source_type == "file":
+            item = await rag_store.ingest_file(
+                settings.project_id,
+                source_path=req.source_path or "",
+                title=req.title,
+                tags=req.tags,
+            )
+        else:
+            item = await rag_store.ingest_text(
+                settings.project_id,
+                title=req.title,
+                content=req.content or "",
+                tags=req.tags,
+            )
+    except PathSecurityError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    await conversation_store.append(
+        settings.project_id,
+        {
+            "source": "rag",
+            "project_id": settings.project_id,
+            "session_id": settings.default_session_id,
+            "event": "document_ingested",
+            "document_id": item.get("document_id"),
+            "title": item.get("title"),
+            "source_type": item.get("source_type"),
+            "source_path": item.get("source_path"),
+            "chunk_count": item.get("chunk_count"),
+        },
+    )
+    return {"project_id": settings.project_id, "item": item}
+
+
+@app.post("/api/projects/{project_id}/rag/search")
+async def search_project_rag(project_id: str, req: RagSearchRequest) -> dict:
+    try:
+        settings = await project_store.get_settings(project_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    payload = await rag_store.build_context(
+        settings.project_id,
+        req.query,
+        top_k=req.top_k,
+        max_chars=req.max_chars,
+    )
+    return {
+        "project_id": settings.project_id,
+        "query": req.query,
+        "top_k": req.top_k,
+        "hits": payload.get("hits", []),
+        "context": payload.get("context", ""),
+    }
 
 
 @app.get("/api/projects/{project_id}/runs")

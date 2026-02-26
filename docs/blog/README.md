@@ -20,3 +20,4 @@ Use this folder to publish step-by-step implementation logs.
 8. [Step 08](./posts/2026-02-26-step-08-run-state-persistence.md)
 9. [Step 09](./posts/2026-02-26-step-09-runner-preflight-fast-fail.md)
 10. [Step 10](./posts/2026-02-26-step-10-workflow-cancel-control.md)
+11. [RAG Step 01](./posts/2026-02-26-rag-step-01-project-knowledge-base.md)

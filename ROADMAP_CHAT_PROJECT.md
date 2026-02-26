@@ -5,6 +5,8 @@ Date baseline: 2026-02-26
 ## Delivery Scope
 
 This roadmap defines the first 10 implementation steps for the chat-room-as-project model.
+RAG track now runs in parallel:
+- [RAG Step Index](./docs/rag-steps/README.md)
 
 ## Progress Summary
 
@@ -20,6 +22,12 @@ This roadmap defines the first 10 implementation steps for the chat-room-as-proj
 | 08 | Run State Persistence | Done | [STEP-08](./docs/steps/STEP-08-run-state-persistence.md) |
 | 09 | Runner Preflight Fast-Fail | Done (needs env hardening) | [STEP-09](./docs/steps/STEP-09-runner-preflight-fast-fail.md) |
 | 10 | Workflow Cancel and Controls | Done (needs invariant tests) | [STEP-10](./docs/steps/STEP-10-workflow-cancel-control.md) |
+
+## RAG Track Progress
+
+| RAG Step | Title | Status | Doc |
+| --- | --- | --- | --- |
+| 01 | Project Knowledge Base Foundation | Done | [RAG-STEP-01](./docs/rag-steps/RAG-STEP-01-project-knowledge-base.md) |
 
 ## Next Window (Step 11-20)
 

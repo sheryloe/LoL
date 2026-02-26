@@ -12,3 +12,6 @@ This folder tracks the first 10 structured delivery steps for the co-worker chat
 8. [STEP-08 Run State Persistence](./STEP-08-run-state-persistence.md)
 9. [STEP-09 Runner Preflight Fast-Fail](./STEP-09-runner-preflight-fast-fail.md)
 10. [STEP-10 Workflow Cancel and Controls](./STEP-10-workflow-cancel-control.md)
+
+Parallel track:
+- [RAG Steps](../rag-steps/README.md)
