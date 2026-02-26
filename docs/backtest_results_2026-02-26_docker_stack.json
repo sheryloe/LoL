@@ -1,0 +1,69 @@
+﻿{
+  "generated_at": "2026-02-26T05:15:18Z",
+  "total": 5,
+  "passed": 5,
+  "failed": 0,
+  "results": [
+    {
+      "step": 1,
+      "name": "orchestrator_health",
+      "ok": true,
+      "detail": {
+        "status": "ok",
+        "runner_base_url": "http://runner:8765",
+        "root_dir": "/workspace/LoL",
+        "journal_dir": "/app/data/journals",
+        "projects_dir": "/app/data/projects"
+      }
+    },
+    {
+      "step": 2,
+      "name": "container_to_runner_health",
+      "ok": true,
+      "detail": {
+        "status": "ok",
+        "root_dir": "/workspace/LoL",
+        "write_enabled": "False"
+      }
+    },
+    {
+      "step": 3,
+      "name": "runner_job_execution",
+      "ok": true,
+      "detail": {
+        "job_id": "7ab15ae2-deb2-4da1-82f3-3923a8c4be5f",
+        "session_id": "docker_diag_step3_report2",
+        "runner": "codex",
+        "status": "completed",
+        "return_code": 0,
+        "cwd": "/workspace/LoL",
+        "command": [
+          "/usr/local/bin/python3.12",
+          "/app/app/mock_agent.py",
+          "codex",
+          "runner dry run"
+        ],
+        "started_at": "2026-02-26T05:15:08.740781+00:00",
+        "ended_at": "2026-02-26T05:15:08.760655+00:00"
+      }
+    },
+    {
+      "step": 4,
+      "name": "workflow_execution",
+      "ok": true,
+      "detail": {
+        "status": "completed",
+        "workflow_job_id": "f940f00d-d6f2-4aec-ab43-ae3bea39f5e5"
+      }
+    },
+    {
+      "step": 5,
+      "name": "workflow_cancel",
+      "ok": true,
+      "detail": {
+        "workflow_job_id": "04257da8-3c7e-43a1-b89e-b720b7a9b311",
+        "status": "canceled"
+      }
+    }
+  ]
+}

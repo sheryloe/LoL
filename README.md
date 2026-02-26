@@ -3,7 +3,7 @@
 This repository runs a **co-worker chat tool** where one project room maps to one collaboration context.
 
 - Orchestrator (Docker): workflow control + web UI + room state
-- Runner (Host Windows): codex/gemini/git subprocess execution
+- Runner (Docker): codex/gemini/git subprocess execution
 - Data-first traceability: conversation, runs, journals are persisted per project
 
 ## Current Mode
@@ -17,8 +17,14 @@ This repository runs a **co-worker chat tool** where one project room maps to on
 1. User sends a chat request to Orchestrator (`POST /api/chat`)
 2. Orchestrator resolves project defaults (session, cwd, fix-mode)
 3. Workflow pipeline runs (`plan -> implement -> review -> fix(optional)`)
-4. Runner executes codex/gemini on host and streams events
+4. Runner executes codex/gemini (or mock agent) and streams events
 5. Orchestrator persists conversation and run states by project room
+
+## Runtime Modes
+
+1. Mock mode (default, stable): runner uses built-in mock agents.
+2. Auto mode: runner uses real CLI only when CLI binary + API key are present, otherwise mock.
+3. Real CLI mode: force real CLI in Docker and authenticate inside `lol-runner`.
 
 ## 10-Step Structured Build
 
@@ -32,18 +38,22 @@ Detailed docs:
 Latest run:
 - [Step10 Smoke Report](./docs/BACKTEST_REPORT_2026-02-26_STEP10.md)
 - [Step10 Raw JSON](./docs/backtest_results_2026-02-26_step10.json)
+- [Docker Stack 5-Step Report](./docs/BACKTEST_REPORT_2026-02-26_DOCKER_STACK.md)
+- [Docker Stack 5-Step Raw JSON](./docs/backtest_results_2026-02-26_docker_stack.json)
+- [Docker CLI Mode 5-Step Report](./docs/BACKTEST_REPORT_2026-02-26_DOCKER_CLI_MODE.md)
+- [Docker CLI Mode 5-Step Raw JSON](./docs/backtest_results_2026-02-26_docker_cli_mode.json)
 
 ## TODO (Visible on GitHub README)
 
 ### P0
 
-1. Fix host-to-container runner routing stability (`host.docker.internal`) across Docker Desktop and Rancher Desktop.
-2. Add automated regression tests for preflight fail-fast and workflow cancel invariants.
-3. Add clearer runtime diagnostics in UI when runner is reachable locally but unreachable from orchestrator container.
+1. Add automated regression tests for preflight fail-fast and workflow cancel invariants.
+2. Add clearer runtime diagnostics in UI for CLI/auth misconfiguration.
+3. Add step-pipeline UI editor (`plan/implement/review/fix`) instead of API-only control.
 
 ### P1
 
-1. Per-project step pipeline toggle/order (`plan/implement/review/fix` on/off).
+1. Per-project step pipeline toggle/order (`plan/implement/review/fix` on/off) in UI.
 2. Per-project CLI argument templates and override policy.
 3. Artifact timeline UX improvement (step status, artifacts, run summary in one thread view).
 4. Run-to-run file diff viewer.
@@ -59,20 +69,48 @@ Latest run:
 
 ## Run
 
-### 1) Runner (Host)
-
-```powershell
-cd D:\AI_Vibe\LoL\runner
-.\start_runner.ps1
-```
-
-### 2) Orchestrator (Docker)
+### 1) Docker Stack (Orchestrator + Runner)
 
 ```powershell
 cd D:\AI_Vibe\LoL\orchestrator
 docker compose up --build
 ```
 
-### 3) Open
+### 2) Open
 
 - `http://localhost:8080`
+
+### 3) Real CLI/Auth (Optional)
+
+Create `D:\AI_Vibe\LoL\orchestrator\.env` from `.env.example` and set:
+
+- `RUNNER_AGENT_MODE=real` (or keep `auto`)
+- `CODEX_CMD`
+- `GEMINI_CMD`
+- `OPENAI_API_KEY`
+- `GEMINI_API_KEY`
+
+Recommended command templates:
+
+- `CODEX_CMD=codex exec --skip-git-repo-check --full-auto {prompt}`
+- `GEMINI_CMD=gemini --prompt {prompt} --yolo`
+
+Optional interactive auth inside Docker:
+
+```powershell
+docker exec -it lol-runner codex login
+```
+
+Runtime verification:
+
+```powershell
+curl http://localhost:8765/health
+```
+
+Check fields:
+
+- `agent_mode`
+- `codex_source`
+- `gemini_source`
+- `openai_api_key_present`
+- `gemini_api_key_present`

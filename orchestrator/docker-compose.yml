@@ -1,4 +1,24 @@
 services:
+  runner:
+    build:
+      context: ../runner
+      dockerfile: Dockerfile
+    container_name: lol-runner
+    ports:
+      - "8765:8765"
+    environment:
+      RUNNER_ROOT_DIR: /workspace/LoL
+      RUNNER_WRITE_ENABLED: ${RUNNER_WRITE_ENABLED:-false}
+      RUNNER_AGENT_MODE: ${RUNNER_AGENT_MODE:-auto}
+      CODEX_CMD: ${CODEX_CMD:-}
+      GEMINI_CMD: ${GEMINI_CMD:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    volumes:
+      - ../:/workspace/LoL
+      - runner-home:/root
+    restart: unless-stopped
+
   orchestrator:
     build:
       context: .
@@ -7,12 +27,17 @@ services:
     ports:
       - "8080:8080"
     environment:
-      RUNNER_BASE_URL: ${RUNNER_BASE_URL:-http://host.docker.internal:8765}
+      RUNNER_BASE_URL: ${RUNNER_BASE_URL:-http://runner:8765}
       ORCH_ROOT_DIR: /workspace/LoL
       ORCH_DATA_DIR: /app/data
     volumes:
       - ../:/workspace/LoL
       - ./data:/app/data
+    depends_on:
+      - runner
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+
+volumes:
+  runner-home:

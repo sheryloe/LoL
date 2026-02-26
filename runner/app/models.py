@@ -7,6 +7,7 @@ class RunRequest(BaseModel):
     session_id: str = Field(min_length=1)
     prompt: str = Field(min_length=1)
     cwd_relative: str = "."
+    command_template: str | None = None
 
 
 class RunResponse(BaseModel):
@@ -24,4 +25,3 @@ class PushRequest(BaseModel):
     cwd_relative: str = "."
     remote: str = "origin"
     branch: str | None = None
-

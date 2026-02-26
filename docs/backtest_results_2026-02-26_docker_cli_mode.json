@@ -1,0 +1,130 @@
+{
+  "timestamp": "2026-02-26T05:33:15.696885+00:00",
+  "environment": {
+    "runner": "http://runner:8765",
+    "orchestrator": "http://127.0.0.1:8080",
+    "scope": "docker-internal-only"
+  },
+  "steps": [
+    {
+      "name": "orchestrator_health",
+      "status": "pass",
+      "started_at": "2026-02-26T05:33:06.910929+00:00",
+      "ended_at": "2026-02-26T05:33:06.938511+00:00",
+      "detail": {
+        "status": "ok",
+        "runner_base_url": "http://runner:8765",
+        "root_dir": "/workspace/LoL",
+        "journal_dir": "/app/data/journals",
+        "projects_dir": "/app/data/projects"
+      }
+    },
+    {
+      "name": "runner_health",
+      "status": "pass",
+      "started_at": "2026-02-26T05:33:06.938531+00:00",
+      "ended_at": "2026-02-26T05:33:06.949603+00:00",
+      "detail": {
+        "status": "ok",
+        "root_dir": "/workspace/LoL",
+        "write_enabled": "False",
+        "agent_mode": "auto",
+        "codex_source": "default:auto_mock",
+        "gemini_source": "default:auto_mock",
+        "codex_available": "True",
+        "gemini_available": "True",
+        "openai_api_key_present": "False",
+        "gemini_api_key_present": "False"
+      }
+    },
+    {
+      "name": "runner_direct_run",
+      "status": "pass",
+      "started_at": "2026-02-26T05:33:06.949624+00:00",
+      "ended_at": "2026-02-26T05:33:06.986736+00:00",
+      "detail": {
+        "run": {
+          "job_id": "a9d685ae-aad0-4567-8950-f7f6a3d83854",
+          "status": "queued"
+        },
+        "job": {
+          "job_id": "a9d685ae-aad0-4567-8950-f7f6a3d83854",
+          "session_id": "docker-cli-check",
+          "runner": "codex",
+          "status": "completed",
+          "return_code": 0,
+          "cwd": "/workspace/LoL",
+          "command": [
+            "/usr/local/bin/python3.12",
+            "/app/app/mock_agent.py",
+            "codex",
+            "health check prompt"
+          ],
+          "started_at": "2026-02-26T05:33:06.963006+00:00",
+          "ended_at": "2026-02-26T05:33:06.984756+00:00"
+        }
+      }
+    },
+    {
+      "name": "workflow_run",
+      "status": "pass",
+      "started_at": "2026-02-26T05:33:06.986751+00:00",
+      "ended_at": "2026-02-26T05:33:15.540318+00:00",
+      "detail": {
+        "start": {
+          "project_id": "room-main",
+          "workflow_job_id": "c4932574-a214-444a-b666-13bb48890dc7",
+          "session_id": "room-main",
+          "status": "queued"
+        },
+        "workflow": {
+          "workflow_job_id": "c4932574-a214-444a-b666-13bb48890dc7",
+          "project_id": "room-main",
+          "session_id": "room-main",
+          "status": "completed",
+          "cwd_relative": ".",
+          "started_at": "2026-02-26T05:33:07.068175+00:00",
+          "ended_at": "2026-02-26T05:33:15.263236+00:00",
+          "artifacts": {
+            "plan": "- Parse request\n- Produce actionable steps",
+            "tasks": "- Provide implementation guidance",
+            "patch": "No code changes were applied in mock mode.",
+            "files": "none",
+            "review": "Mock review passed.",
+            "git": "## main...origin/main\n M CONVERSATION_LOG.md\nMM README.md\n M ROADMAP_CHAT_PROJECT.md\nAM docs/BACKTEST_REPORT_2026-02-26_DOCKER_STACK.md\n M docs/BACKTEST_REPORT_2026-02-26_STEP10.md\n M docs/TODO.md\n M docs/backtest_results_2026-02-26.json\nAM docs/backtest_results_2026-02-26_docker_stack.json\n M docs/backtest_results_2026-02-26_step10.json\n M docs/blog/README.md\n M docs/blog/posts/2026-02-26-step-01-single-source-of-truth.md\n M docs/blog/posts/2026-02-26-step-02-project-room-model.md\n M docs/blog/posts/2026-02-26-step-03-settings-persistence.md\n M docs/blog/posts/2026-02-26-step-04-settings-api.md\n M docs/blog/posts/2026-02-26-step-05-settings-ui.md\n M docs/blog/posts/2026-02-26-step-06-chat-request-resolution.md\n M docs/blog/posts/2026-02-26-step-07-conversation-persistence.md\n M docs/blog/posts/2026-02-26-step-08-run-state-persistence.md\n M docs/blog/posts/2026-02-26-step-09-runner-preflight-fast-fail.md\n M docs/blog/posts/2026-02-26-step-10-workflow-cancel-control.md\n M docs/steps/README.md\n M docs/steps/STEP-01-single-source-of-truth.md\n M docs/steps/STEP-02-project-room-model.md\n M docs/steps/STEP-03-settings-persistence.md\n M docs/steps/STEP-04-settings-api.md\n M docs/steps/STEP-05-settings-ui.md\n M docs/steps/STEP-06-chat-request-resolution.md\n M docs/steps/STEP-07-conversation-persistence.md\n M docs/steps/STEP-08-run-state-persistence.md\n M docs/steps/STEP-09-runner-preflight-fast-fail.md\n M docs/steps/STEP-10-workflow-cancel-control.md\nAM orchestrator/.env.example\nMM orchestrator/README.md\nM  orchestrator/app/config.py\nA  orchestrator/app/conversations.py\nM  orchestrator/app/main.py\nM  orchestrator/app/models.py\nA  orchestrator/app/project_rooms.py\nA  orchestrator/app/run_store.py\nM  orchestrator/app/runner_client.py\nM  orchestrator/app/static/index.html\nM  orchestrator/app/workflow.py\nMM orchestrator/docker-compose.yml\nAM runner/Dockerfile\nMM runner/README.md\nMM runner/app/config.py\nM  runner/app/git_ops.py\nM  runner/app/job_manager.py\nMM runner/app/main.py\nA  runner/app/mock_agent.py\nM  runner/app/models.py\n?? docker_cli_backtest.py\n"
+          }
+        }
+      }
+    },
+    {
+      "name": "workflow_cancel",
+      "status": "pass",
+      "started_at": "2026-02-26T05:33:15.540337+00:00",
+      "ended_at": "2026-02-26T05:33:15.696872+00:00",
+      "detail": {
+        "start": {
+          "project_id": "room-main",
+          "workflow_job_id": "42617a35-5e2c-4f81-8046-69f6e2caf720",
+          "session_id": "room-main",
+          "status": "queued"
+        },
+        "cancel": {
+          "workflow_job_id": "42617a35-5e2c-4f81-8046-69f6e2caf720",
+          "status": "canceled"
+        },
+        "workflow": {
+          "workflow_job_id": "42617a35-5e2c-4f81-8046-69f6e2caf720",
+          "project_id": "room-main",
+          "session_id": "room-main",
+          "status": "canceled",
+          "cwd_relative": ".",
+          "started_at": "2026-02-26T05:33:15.622339+00:00",
+          "ended_at": "2026-02-26T05:33:15.663144+00:00",
+          "artifacts": {}
+        }
+      }
+    }
+  ],
+  "pass_count": 5,
+  "fail_count": 0
+}

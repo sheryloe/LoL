@@ -13,6 +13,7 @@
       --line: #d8d2c6;
       --accent: #0c6b58;
       --accent-2: #f0a84b;
+      --danger: #a12b2b;
     }
     * { box-sizing: border-box; }
     body {
@@ -22,11 +23,11 @@
       color: var(--ink);
     }
     .wrap {
-      max-width: 1400px;
+      max-width: 1500px;
       margin: 0 auto;
       padding: 20px;
       display: grid;
-      grid-template-columns: 1.4fr 1fr;
+      grid-template-columns: 1.45fr 1fr;
       gap: 16px;
     }
     .card {
@@ -42,9 +43,20 @@
       font-weight: 700;
       letter-spacing: 0.2px;
     }
+    .subtitle {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .stack { display: grid; gap: 10px; }
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
     }
     label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 3px; }
@@ -57,7 +69,7 @@
       color: var(--ink);
       font: inherit;
     }
-    textarea { min-height: 100px; resize: vertical; }
+    textarea { min-height: 90px; resize: vertical; }
     .btn {
       background: var(--accent);
       color: white;
@@ -65,14 +77,19 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .btn.secondary {
-      background: #2f4a3f;
+    .btn.secondary { background: #2f4a3f; }
+    .btn.ghost {
+      background: #f7f3eb;
+      color: #2f4a3f;
+      border: 1px solid var(--line);
     }
-    .stack { display: grid; gap: 8px; }
+    .btn.danger { background: var(--danger); }
     .status {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--muted);
       min-height: 20px;
+      border-left: 3px solid var(--accent-2);
+      padding-left: 8px;
     }
     .logs, .panel-content, .file-content {
       background: #faf8f3;
@@ -98,14 +115,33 @@
       padding-left: 6px;
     }
     .panel-content {
-      min-height: 120px;
+      min-height: 100px;
       max-height: 220px;
     }
+    .project-list {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #faf8f3;
+      max-height: 200px;
+      overflow: auto;
+    }
+    .project-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #e9e3d7;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .project-row:last-child { border-bottom: none; }
+    .project-row:hover { background: #f1ebdf; }
+    .project-row .muted { color: var(--muted); }
     .files-list {
       border: 1px solid var(--line);
       border-radius: 10px;
       background: #faf8f3;
-      max-height: 250px;
+      max-height: 220px;
       overflow: auto;
     }
     .entry {
@@ -120,8 +156,8 @@
     .entry:hover { background: #f1ebdf; }
     .entry:last-child { border-bottom: none; }
     .entry .type { color: var(--muted); }
-    .file-content { min-height: 220px; max-height: 380px; }
-    @media (max-width: 980px) {
+    .file-content { min-height: 180px; max-height: 320px; }
+    @media (max-width: 1080px) {
       .wrap { grid-template-columns: 1fr; }
     }
   </style>
@@ -130,32 +166,43 @@
   <div class="wrap">
     <section class="card stack">
       <h1 class="title">Workflow Console</h1>
-      <div class="grid-2">
+      <p class="subtitle">채팅방 = 프로젝트 단위로 워크플로를 실행합니다.</p>
+
+      <div class="grid-3">
         <div>
-          <label for="sessionId">Session ID</label>
-          <input id="sessionId" value="session-main" />
+          <label for="projectId">Project ID (Room ID)</label>
+          <input id="projectId" value="room-main" />
         </div>
         <div>
-          <label for="cwdRelative">CWD relative (from LoL root)</label>
+          <label for="sessionId">Session ID</label>
+          <input id="sessionId" value="room-main" />
+        </div>
+        <div>
+          <label for="cwdRelative">CWD relative</label>
           <input id="cwdRelative" value="." />
         </div>
       </div>
+
       <div>
         <label for="message">Prompt</label>
-        <textarea id="message" placeholder="요청을 입력하세요"></textarea>
+        <textarea id="message" placeholder="요청을 입력하세요."></textarea>
       </div>
-      <div class="grid-2">
+
+      <div class="grid-3">
         <button id="sendBtn" class="btn">Run Workflow</button>
+        <button id="cancelBtn" class="btn danger">Cancel Workflow</button>
         <label style="display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;">
           <input id="enableFix" type="checkbox" checked style="width:auto;" />
-          Review FAIL 시 Codex Fix 수행
+          Review FAIL 시 Codex Fix 실행
         </label>
       </div>
-      <div id="status" class="status"></div>
+
+      <div id="workflowStatus" class="status"></div>
       <div>
         <h3 class="panel-title">Stream Logs</h3>
         <div id="logs" class="logs"></div>
       </div>
+
       <div class="panel-grid">
         <div><h3 class="panel-title">Plan</h3><div id="panel-plan" class="panel-content"></div></div>
         <div><h3 class="panel-title">Tasks</h3><div id="panel-tasks" class="panel-content"></div></div>
@@ -166,25 +213,91 @@
       </div>
     </section>
 
-    <section class="card stack">
-      <h1 class="title">File Browser</h1>
-      <div class="grid-2">
-        <input id="browsePath" value="." />
-        <button id="refreshFiles" class="btn secondary">Refresh</button>
-      </div>
-      <div id="filesList" class="files-list"></div>
-      <div>
-        <h3 class="panel-title">File Content</h3>
-        <div id="filePath" class="status"></div>
-        <div id="fileContent" class="file-content"></div>
-      </div>
+    <section class="stack">
+      <section class="card stack">
+        <h2 class="title">Project Settings</h2>
+        <div id="settingsStatus" class="status"></div>
+
+        <div class="grid-2">
+          <button id="loadSettingsBtn" class="btn ghost">Load Settings</button>
+          <button id="createProjectBtn" class="btn secondary">Create Project</button>
+        </div>
+
+        <div>
+          <label for="projectTitle">Title</label>
+          <input id="projectTitle" placeholder="프로젝트 제목" />
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label for="defaultSessionId">Default Session ID</label>
+            <input id="defaultSessionId" />
+          </div>
+          <div>
+            <label for="defaultCwdRelative">Default CWD</label>
+            <input id="defaultCwdRelative" value="." />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label for="writePolicy">Write Policy</label>
+            <select id="writePolicy">
+              <option value="read_only">read_only</option>
+              <option value="write_enabled">write_enabled</option>
+            </select>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;">
+            <input id="defaultEnableFix" type="checkbox" checked style="width:auto;" />
+            default enable_fix
+          </label>
+        </div>
+
+        <div>
+          <label for="codexCmdTemplate">Codex CMD Template</label>
+          <input id="codexCmdTemplate" placeholder="(empty = runner default)" />
+        </div>
+        <div>
+          <label for="geminiCmdTemplate">Gemini CMD Template</label>
+          <input id="geminiCmdTemplate" placeholder="(empty = runner default)" />
+        </div>
+
+        <button id="saveSettingsBtn" class="btn">Save Settings</button>
+
+        <h3 class="panel-title">Projects</h3>
+        <div id="projectList" class="project-list"></div>
+
+        <button id="refreshRoomLogsBtn" class="btn ghost">Refresh Room Logs</button>
+        <h3 class="panel-title">Run History</h3>
+        <div id="runHistory" class="panel-content"></div>
+        <h3 class="panel-title">Conversation History</h3>
+        <div id="conversationHistory" class="panel-content"></div>
+      </section>
+
+      <section class="card stack">
+        <h2 class="title">File Browser</h2>
+        <div class="grid-2">
+          <input id="browsePath" value="." />
+          <button id="refreshFiles" class="btn secondary">Refresh</button>
+        </div>
+        <div id="filesList" class="files-list"></div>
+        <div>
+          <h3 class="panel-title">File Content</h3>
+          <div id="filePath" class="status"></div>
+          <div id="fileContent" class="file-content"></div>
+        </div>
+      </section>
     </section>
   </div>
 
   <script>
     const el = (id) => document.getElementById(id);
     const logs = el("logs");
-    const statusEl = el("status");
+    const workflowStatus = el("workflowStatus");
+    const settingsStatus = el("settingsStatus");
+    const runHistory = el("runHistory");
+    const conversationHistory = el("conversationHistory");
+    let currentWorkflowJobId = null;
     let source = null;
 
     const panels = {
@@ -198,14 +311,174 @@
       fix: el("panel-patch")
     };
 
+    function setStatus(node, message) {
+      node.textContent = message;
+    }
+
     function appendLog(line) {
       logs.textContent += line + "\n";
       logs.scrollTop = logs.scrollHeight;
     }
 
-    function clearView() {
+    function clearWorkflowView() {
       logs.textContent = "";
       Object.values(panels).forEach((node) => { node.textContent = ""; });
+    }
+
+    async function apiJson(url, options = {}) {
+      const res = await fetch(url, {
+        headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+        ...options
+      });
+      const text = await res.text();
+      let data = {};
+      if (text) {
+        try { data = JSON.parse(text); } catch { data = { raw: text }; }
+      }
+      if (!res.ok) {
+        const detail = data.detail || data.raw || `${res.status}`;
+        throw new Error(String(detail));
+      }
+      return data;
+    }
+
+    function applySettings(settings) {
+      el("projectId").value = settings.project_id;
+      el("projectTitle").value = settings.title || "";
+      el("defaultSessionId").value = settings.default_session_id;
+      el("defaultCwdRelative").value = settings.default_cwd_relative;
+      el("defaultEnableFix").checked = !!settings.default_enable_fix;
+      el("codexCmdTemplate").value = settings.codex_cmd_template || "";
+      el("geminiCmdTemplate").value = settings.gemini_cmd_template || "";
+      el("writePolicy").value = settings.write_policy || "read_only";
+
+      el("sessionId").value = settings.default_session_id;
+      el("cwdRelative").value = settings.default_cwd_relative;
+      el("enableFix").checked = !!settings.default_enable_fix;
+    }
+
+    async function refreshProjects() {
+      try {
+        const data = await apiJson("/api/projects");
+        const list = el("projectList");
+        list.textContent = "";
+        for (const item of (data.items || [])) {
+          const row = document.createElement("div");
+          row.className = "project-row";
+          row.innerHTML = `<span>${item.project_id}</span><span class="muted">${item.updated_at}</span>`;
+          row.onclick = async () => {
+            el("projectId").value = item.project_id;
+            await loadSettings();
+          };
+          list.appendChild(row);
+        }
+      } catch (err) {
+        setStatus(settingsStatus, `projects load failed: ${String(err.message || err)}`);
+      }
+    }
+
+    function renderRuns(items) {
+      const rows = (items || []).slice(0, 20).map((item) => {
+        return `${item.workflow_job_id} | ${item.status} | ${item.updated_at || "-"}`;
+      });
+      runHistory.textContent = rows.length ? rows.join("\n") : "(no runs)";
+    }
+
+    function renderConversation(items) {
+      const rows = (items || []).slice(-40).map((item) => {
+        const src = item.source || item.type || "event";
+        if (item.message) {
+          return `[${src}] ${item.message}`;
+        }
+        if (item.event) {
+          return `[${src}] ${item.event}`;
+        }
+        return `[${src}] ${JSON.stringify(item)}`;
+      });
+      conversationHistory.textContent = rows.length ? rows.join("\n") : "(no conversation events)";
+    }
+
+    async function refreshRoomLogs() {
+      const projectId = el("projectId").value.trim();
+      if (!projectId) {
+        setStatus(settingsStatus, "project_id is required");
+        return;
+      }
+      try {
+        const runs = await apiJson(`/api/projects/${encodeURIComponent(projectId)}/runs`);
+        const conversation = await apiJson(`/api/projects/${encodeURIComponent(projectId)}/conversation?limit=200`);
+        renderRuns(runs.items || []);
+        renderConversation(conversation.items || []);
+      } catch (err) {
+        setStatus(settingsStatus, `room logs load failed: ${String(err.message || err)}`);
+      }
+    }
+
+    async function loadSettings() {
+      const projectId = el("projectId").value.trim();
+      if (!projectId) {
+        setStatus(settingsStatus, "project_id is required");
+        return;
+      }
+      try {
+        const data = await apiJson(`/api/projects/${encodeURIComponent(projectId)}/settings`);
+        applySettings(data);
+        await refreshRoomLogs();
+        setStatus(settingsStatus, `loaded settings: ${projectId}`);
+      } catch (err) {
+        setStatus(settingsStatus, `load failed: ${String(err.message || err)}`);
+      }
+    }
+
+    async function createProject() {
+      const projectId = el("projectId").value.trim();
+      if (!projectId) {
+        setStatus(settingsStatus, "project_id is required");
+        return;
+      }
+      try {
+        const data = await apiJson("/api/projects", {
+          method: "POST",
+          body: JSON.stringify({
+            project_id: projectId,
+            title: el("projectTitle").value.trim() || null
+          })
+        });
+        applySettings(data);
+        await refreshProjects();
+        await refreshRoomLogs();
+        setStatus(settingsStatus, `created project: ${projectId}`);
+      } catch (err) {
+        setStatus(settingsStatus, `create failed: ${String(err.message || err)}`);
+      }
+    }
+
+    async function saveSettings() {
+      const projectId = el("projectId").value.trim();
+      if (!projectId) {
+        setStatus(settingsStatus, "project_id is required");
+        return;
+      }
+      try {
+        const data = await apiJson(`/api/projects/${encodeURIComponent(projectId)}/settings`, {
+          method: "PUT",
+          body: JSON.stringify({
+            title: el("projectTitle").value.trim() || null,
+            default_session_id: el("defaultSessionId").value.trim() || projectId,
+            default_cwd_relative: el("defaultCwdRelative").value.trim() || ".",
+            default_enable_fix: el("defaultEnableFix").checked,
+            codex_cmd_template: el("codexCmdTemplate").value.trim(),
+            gemini_cmd_template: el("geminiCmdTemplate").value.trim(),
+            write_policy: el("writePolicy").value
+          })
+        });
+        applySettings(data);
+        await refreshProjects();
+        await refreshRoomLogs();
+        setStatus(settingsStatus, `saved settings: ${projectId}`);
+      } catch (err) {
+        setStatus(settingsStatus, `save failed: ${String(err.message || err)}`);
+      }
     }
 
     async function startWorkflow() {
@@ -213,41 +486,52 @@
         source.close();
         source = null;
       }
-      clearView();
+      clearWorkflowView();
+
       const payload = {
-        session_id: el("sessionId").value.trim(),
+        project_id: el("projectId").value.trim() || null,
+        session_id: el("sessionId").value.trim() || null,
         message: el("message").value,
-        cwd_relative: el("cwdRelative").value.trim() || ".",
+        cwd_relative: el("cwdRelative").value.trim() || null,
         enable_fix: el("enableFix").checked
       };
-      statusEl.textContent = "workflow 시작 중...";
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        statusEl.textContent = "workflow 시작 실패";
-        appendLog(await res.text());
+
+      if (!payload.project_id) {
+        setStatus(workflowStatus, "project_id is required");
         return;
       }
-      const data = await res.json();
-      statusEl.textContent = `workflow_job_id=${data.workflow_job_id}`;
+      if (!payload.message || !payload.message.trim()) {
+        setStatus(workflowStatus, "message is required");
+        return;
+      }
+
+      let data;
+      try {
+        data = await apiJson("/api/chat", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        setStatus(workflowStatus, `workflow start failed: ${String(err.message || err)}`);
+        return;
+      }
+
+      setStatus(workflowStatus, `workflow_job_id=${data.workflow_job_id} (project=${data.project_id})`);
+      currentWorkflowJobId = data.workflow_job_id;
+      setTimeout(() => refreshRoomLogs(), 800);
       source = new EventSource(`/api/workflow/stream/${data.workflow_job_id}`);
       source.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          handleEvent(payload);
-        } catch (e) {
-          appendLog("parse error: " + String(e));
+          handleWorkflowEvent(payload);
+        } catch (err) {
+          appendLog("parse error: " + String(err));
         }
       };
-      source.onerror = () => {
-        appendLog("[stream] disconnected");
-      };
+      source.onerror = () => appendLog("[stream] disconnected");
     }
 
-    function handleEvent(evt) {
+    function handleWorkflowEvent(evt) {
       const tag = `[${evt.seq}] ${evt.type}`;
       if (evt.type === "runner_event") {
         const p = evt.payload || {};
@@ -258,6 +542,7 @@
         }
         return;
       }
+
       if (evt.type === "artifact") {
         appendLog(`${tag} artifact=${evt.name}`);
         if (panels[evt.name]) {
@@ -265,64 +550,88 @@
         }
         return;
       }
+
       appendLog(`${tag} ${JSON.stringify(evt)}`);
       if (evt.type === "meta" && evt.event === "finished") {
-        statusEl.textContent = `완료: ${evt.status}`;
-        if (source) {
-          source.close();
-          source = null;
-        }
+        setStatus(workflowStatus, `completed: ${evt.status}`);
+        currentWorkflowJobId = null;
+        if (source) { source.close(); source = null; }
       }
       if (evt.type === "meta" && evt.event === "error") {
-        statusEl.textContent = `실패: ${evt.message || "unknown"}`;
-        if (source) {
-          source.close();
-          source = null;
-        }
+        setStatus(workflowStatus, `failed: ${evt.message || "unknown"}`);
+        currentWorkflowJobId = null;
+        if (source) { source.close(); source = null; }
+      }
+      if (evt.type === "meta" && evt.event === "canceled") {
+        setStatus(workflowStatus, "canceled");
+        currentWorkflowJobId = null;
+        if (source) { source.close(); source = null; }
+      }
+    }
+
+    async function cancelWorkflow() {
+      if (!currentWorkflowJobId) {
+        setStatus(workflowStatus, "no running workflow");
+        return;
+      }
+      try {
+        await apiJson(`/api/workflow/${encodeURIComponent(currentWorkflowJobId)}/cancel`, { method: "POST" });
+        setStatus(workflowStatus, `cancel requested: ${currentWorkflowJobId}`);
+      } catch (err) {
+        setStatus(workflowStatus, `cancel failed: ${String(err.message || err)}`);
       }
     }
 
     async function refreshFiles() {
       const path = el("browsePath").value.trim() || ".";
-      const res = await fetch(`/api/files?path=${encodeURIComponent(path)}`);
       const list = el("filesList");
       list.textContent = "";
-      if (!res.ok) {
-        list.textContent = await res.text();
-        return;
-      }
-      const data = await res.json();
-      for (const entry of data.entries) {
-        const row = document.createElement("div");
-        row.className = "entry";
-        row.innerHTML = `<span>${entry.path}</span><span class="type">${entry.type}</span>`;
-        row.onclick = () => {
-          if (entry.type === "dir") {
-            el("browsePath").value = entry.path;
-            refreshFiles();
-          } else {
-            loadFile(entry.path);
-          }
-        };
-        list.appendChild(row);
+      try {
+        const data = await apiJson(`/api/files?path=${encodeURIComponent(path)}`, { headers: {} });
+        for (const entry of data.entries || []) {
+          const row = document.createElement("div");
+          row.className = "entry";
+          row.innerHTML = `<span>${entry.path}</span><span class="type">${entry.type}</span>`;
+          row.onclick = () => {
+            if (entry.type === "dir") {
+              el("browsePath").value = entry.path;
+              refreshFiles();
+            } else {
+              loadFile(entry.path);
+            }
+          };
+          list.appendChild(row);
+        }
+      } catch (err) {
+        list.textContent = String(err.message || err);
       }
     }
 
     async function loadFile(path) {
-      const res = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
-      if (!res.ok) {
+      try {
+        const data = await apiJson(`/api/file?path=${encodeURIComponent(path)}`, { headers: {} });
+        el("filePath").textContent = data.path;
+        el("fileContent").textContent = data.content;
+      } catch (err) {
         el("filePath").textContent = path;
-        el("fileContent").textContent = await res.text();
-        return;
+        el("fileContent").textContent = String(err.message || err);
       }
-      const data = await res.json();
-      el("filePath").textContent = data.path;
-      el("fileContent").textContent = data.content;
     }
 
     el("sendBtn").onclick = () => startWorkflow();
+    el("cancelBtn").onclick = () => cancelWorkflow();
+    el("loadSettingsBtn").onclick = () => loadSettings();
+    el("createProjectBtn").onclick = () => createProject();
+    el("saveSettingsBtn").onclick = () => saveSettings();
+    el("refreshRoomLogsBtn").onclick = () => refreshRoomLogs();
     el("refreshFiles").onclick = () => refreshFiles();
-    refreshFiles();
+
+    (async () => {
+      await refreshProjects();
+      await refreshFiles();
+      await loadSettings();
+      await refreshRoomLogs();
+    })();
   </script>
 </body>
 </html>

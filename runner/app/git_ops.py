@@ -1,25 +1,28 @@
 from __future__ import annotations
 
 import asyncio
+import subprocess
 from pathlib import Path
 
 
-async def run_git(args: list[str], cwd: Path) -> dict:
-    process = await asyncio.create_subprocess_exec(
-        "git",
-        *args,
+def _run_git_sync(args: list[str], cwd: Path) -> dict:
+    completed = subprocess.run(
+        ["git", *args],
         cwd=str(cwd),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
     )
-    stdout_raw, stderr_raw = await process.communicate()
-    stdout = stdout_raw.decode(errors="replace")
-    stderr = stderr_raw.decode(errors="replace")
     return {
         "args": args,
         "cwd": str(cwd),
-        "return_code": process.returncode,
-        "stdout": stdout,
-        "stderr": stderr,
+        "return_code": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
     }
 
+
+async def run_git(args: list[str], cwd: Path) -> dict:
+    return await asyncio.to_thread(_run_git_sync, args, cwd)

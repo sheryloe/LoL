@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import queue
+import shlex
+import subprocess
+import threading
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -13,11 +17,16 @@ def utc_now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def build_command(base_cmd: list[str], prompt: str) -> list[str]:
+def build_command(base_cmd: list[str], prompt: str, append_prompt_if_missing: bool = True) -> list[str]:
     command = [part.replace("{prompt}", prompt) for part in base_cmd]
-    if not any("{prompt}" in part for part in base_cmd):
+    if append_prompt_if_missing and not any("{prompt}" in part for part in base_cmd):
         command = [*command, prompt]
     return command
+
+
+def parse_command_template(raw_template: str) -> list[str]:
+    parts = shlex.split(raw_template.strip())
+    return [part for part in parts if part]
 
 
 @dataclass
@@ -33,7 +42,7 @@ class Job:
     started_at: str | None = None
     ended_at: str | None = None
     events: list[dict[str, Any]] = field(default_factory=list)
-    process: asyncio.subprocess.Process | None = None
+    process: subprocess.Popen[str] | None = None
     condition: asyncio.Condition = field(default_factory=asyncio.Condition)
     seq: int = 0
 
@@ -99,16 +108,66 @@ class JobManager:
                     "timestamp": job.started_at,
                 },
             )
-            job.process = await asyncio.create_subprocess_exec(
-                *job.command,
+            # Use stdlib subprocess for cross-platform stability (Windows asyncio loop can
+            # raise NotImplementedError for create_subprocess_exec).
+            job.process = subprocess.Popen(
+                job.command,
                 cwd=str(job.cwd),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                bufsize=1,
             )
-            stdout_task = asyncio.create_task(self._pump(job, job.process.stdout, "stdout"))
-            stderr_task = asyncio.create_task(self._pump(job, job.process.stderr, "stderr"))
-            job.return_code = await job.process.wait()
-            await asyncio.gather(stdout_task, stderr_task)
+
+            line_queue: queue.Queue[tuple[str, str | None]] = queue.Queue()
+
+            def _reader(stream, channel: str) -> None:
+                try:
+                    if stream is None:
+                        return
+                    for raw_line in iter(stream.readline, ""):
+                        line_queue.put((channel, raw_line.rstrip("\r\n")))
+                finally:
+                    line_queue.put((channel, None))
+
+            stdout_thread = threading.Thread(
+                target=_reader,
+                args=(job.process.stdout, "stdout"),
+                daemon=True,
+            )
+            stderr_thread = threading.Thread(
+                target=_reader,
+                args=(job.process.stderr, "stderr"),
+                daemon=True,
+            )
+            stdout_thread.start()
+            stderr_thread.start()
+
+            open_streams = {"stdout": True, "stderr": True}
+            while any(open_streams.values()):
+                try:
+                    channel, line = line_queue.get(timeout=0.1)
+                except queue.Empty:
+                    await asyncio.sleep(0.05)
+                    continue
+                if line is None:
+                    open_streams[channel] = False
+                    continue
+                await self._emit(
+                    job,
+                    {
+                        "type": "log",
+                        "stream": channel,
+                        "message": line,
+                        "timestamp": utc_now(),
+                    },
+                )
+
+            stdout_thread.join(timeout=1.0)
+            stderr_thread.join(timeout=1.0)
+            job.return_code = job.process.wait()
             job.status = "completed" if job.return_code == 0 else "failed"
             job.ended_at = utc_now()
             await self._emit(
@@ -124,37 +183,15 @@ class JobManager:
         except Exception as exc:  # pragma: no cover - defensive guard
             job.status = "failed"
             job.ended_at = utc_now()
+            error_message = f"{exc.__class__.__name__}: {exc}" if str(exc) else exc.__class__.__name__
             await self._emit(
                 job,
                 {
                     "type": "meta",
                     "event": "error",
                     "status": "failed",
-                    "message": str(exc),
+                    "message": error_message,
                     "timestamp": job.ended_at,
-                },
-            )
-
-    async def _pump(
-        self,
-        job: Job,
-        stream: asyncio.StreamReader | None,
-        channel: str,
-    ) -> None:
-        if stream is None:
-            return
-        while True:
-            line = await stream.readline()
-            if not line:
-                return
-            text = line.decode(errors="replace").rstrip("\r\n")
-            await self._emit(
-                job,
-                {
-                    "type": "log",
-                    "stream": channel,
-                    "message": text,
-                    "timestamp": utc_now(),
                 },
             )
 
@@ -169,10 +206,9 @@ class JobManager:
         job = self.get(job_id)
         if job is None or job.process is None:
             return False
-        if job.process.returncode is not None:
+        if job.process.poll() is not None:
             return False
         job.process.terminate()
         with contextlib.suppress(ProcessLookupError):
-            await job.process.wait()
+            await asyncio.to_thread(job.process.wait, 5)
         return True
-

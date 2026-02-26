@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import json
+import sys
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Query
@@ -8,9 +10,12 @@ from fastapi.responses import StreamingResponse
 
 from .config import load_config
 from .git_ops import run_git
-from .job_manager import JobManager, build_command
+from .job_manager import JobManager, build_command, parse_command_template
 from .models import CommitRequest, PushRequest, RunRequest, RunResponse
 from .security import PathSecurityError, resolve_cwd
+
+if sys.platform == "win32" and hasattr(asyncio, "WindowsProactorEventLoopPolicy"):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 app = FastAPI(title="LoL Host Runner", version="0.1.0")
 config = load_config()
@@ -23,6 +28,13 @@ async def health() -> dict[str, str]:
         "status": "ok",
         "root_dir": str(config.root_dir),
         "write_enabled": str(config.write_enabled),
+        "agent_mode": config.agent_mode,
+        "codex_source": config.codex_source,
+        "gemini_source": config.gemini_source,
+        "codex_available": str(config.codex_available),
+        "gemini_available": str(config.gemini_available),
+        "openai_api_key_present": str(config.openai_api_key_present),
+        "gemini_api_key_present": str(config.gemini_api_key_present),
     }
 
 
@@ -36,7 +48,14 @@ async def run_codex(req: RunRequest) -> RunResponse:
         cwd = resolve_cwd(config.root_dir, req.cwd_relative)
     except PathSecurityError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    command = build_command(config.codex_cmd, req.prompt)
+    explicit_template = bool(req.command_template and req.command_template.strip())
+    try:
+        base_cmd = parse_command_template(req.command_template) if explicit_template else config.codex_cmd
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"invalid command_template: {exc}") from exc
+    if not base_cmd:
+        raise HTTPException(status_code=400, detail="invalid command_template: empty command")
+    command = build_command(base_cmd, req.prompt, append_prompt_if_missing=not explicit_template)
     job = await jobs.create(req.session_id, "codex", cwd, command, req.prompt)
     return RunResponse(job_id=job.job_id, status=job.status)
 
@@ -47,7 +66,14 @@ async def run_gemini(req: RunRequest) -> RunResponse:
         cwd = resolve_cwd(config.root_dir, req.cwd_relative)
     except PathSecurityError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    command = build_command(config.gemini_cmd, req.prompt)
+    explicit_template = bool(req.command_template and req.command_template.strip())
+    try:
+        base_cmd = parse_command_template(req.command_template) if explicit_template else config.gemini_cmd
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"invalid command_template: {exc}") from exc
+    if not base_cmd:
+        raise HTTPException(status_code=400, detail="invalid command_template: empty command")
+    command = build_command(base_cmd, req.prompt, append_prompt_if_missing=not explicit_template)
     job = await jobs.create(req.session_id, "gemini", cwd, command, req.prompt)
     return RunResponse(job_id=job.job_id, status=job.status)
 
@@ -67,6 +93,19 @@ async def get_job(job_id: str) -> dict:
         "command": job.command,
         "started_at": job.started_at,
         "ended_at": job.ended_at,
+    }
+
+
+@app.post("/jobs/{job_id}/cancel")
+async def cancel_job(job_id: str) -> dict:
+    job = jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    canceled = await jobs.terminate(job_id)
+    return {
+        "job_id": job_id,
+        "canceled": canceled,
+        "status": "canceled" if canceled else "not_running",
     }
 
 
