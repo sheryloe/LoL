@@ -42,6 +42,7 @@ Detailed docs:
 - [Step 02 - Workflow and Persistence Core](./docs/mega-steps/STEP-02-workflow-persistence-core.md)
 - [Step 03 - Real Execution and Reliability Hardening](./docs/mega-steps/STEP-03-real-execution-reliability.md)
 - [Step 04 - RAG and Dockerized Multi-CLI Orchestrator MVP](./docs/mega-steps/STEP-04-rag-and-dockerized-mvp.md)
+- [Notion Sync Log (2026-02-26)](./docs/mega-steps/NOTION_SYNC_2026-02-26.md)
 
 ## RAG Track (Step 1/10)
 
