@@ -1,0 +1,49 @@
+﻿{
+    "generated_at":  "2026-02-26T13:37:53+09:00",
+    "project_id":  "room_step10_20260226133745",
+    "total":  8,
+    "passed":  8,
+    "failed":  0,
+    "results":  [
+                    {
+                        "name":  "runner_health",
+                        "ok":  true,
+                        "detail":  "{\"status\":\"ok\",\"root_dir\":\"D:\\\\AI_Vibe\\\\LoL\",\"write_enabled\":\"False\"}"
+                    },
+                    {
+                        "name":  "orchestrator_health",
+                        "ok":  true,
+                        "detail":  "{\"status\":\"ok\",\"runner_base_url\":\"http://host.docker.internal:8765\",\"root_dir\":\"/workspace/LoL\",\"journal_dir\":\"/app/data/journals\",\"projects_dir\":\"/app/data/projects\"}"
+                    },
+                    {
+                        "name":  "create_project",
+                        "ok":  true,
+                        "detail":  "{\"schema_version\":1,\"project_id\":\"room_step10_20260226133745\",\"title\":\"Step10 Validation Room\",\"default_session_id\":\"room_step10_20260226133745\",\"default_cwd_relative\":\".\",\"default_enable_fix\":true,\"codex_cmd_template\":\"codex\",\"gemini_cmd_template\":\"gemini\",\"write_policy\":\"read_only\",\"created_at\":\"2026-02-26T04:37:47.753490+00:00\",\"updated_at\":\"2026-02-26T04:37:47.753490+00:00\"}"
+                    },
+                    {
+                        "name":  "put_settings",
+                        "ok":  true,
+                        "detail":  "{\"schema_version\":1,\"project_id\":\"room_step10_20260226133745\",\"title\":\"Step10 Validation Room\",\"default_session_id\":\"room_step10_20260226133745\",\"default_cwd_relative\":\".\",\"default_enable_fix\":true,\"codex_cmd_template\":\"codex\",\"gemini_cmd_template\":\"gemini\",\"write_policy\":\"read_only\",\"created_at\":\"2026-02-26T04:37:47.753490+00:00\",\"updated_at\":\"2026-02-26T04:37:47.828266+00:00\"}"
+                    },
+                    {
+                        "name":  "start_chat_workflow",
+                        "ok":  true,
+                        "detail":  "{\"project_id\":\"room_step10_20260226133745\",\"workflow_job_id\":\"17985b09-2909-4b52-92e9-b42cd051022a\",\"session_id\":\"room_step10_20260226133745\",\"status\":\"queued\"}"
+                    },
+                    {
+                        "name":  "get_workflow",
+                        "ok":  true,
+                        "detail":  "{\"workflow_job_id\":\"17985b09-2909-4b52-92e9-b42cd051022a\",\"project_id\":\"room_step10_20260226133745\",\"session_id\":\"room_step10_20260226133745\",\"status\":\"failed\",\"cwd_relative\":\".\",\"started_at\":\"2026-02-26T04:37:47.969434+00:00\",\"ended_at\":\"2026-02-26T04:37:48.010661+00:00\",\"artifacts\":{}}"
+                    },
+                    {
+                        "name":  "list_runs",
+                        "ok":  true,
+                        "detail":  "{\"project_id\":\"room_step10_20260226133745\",\"items\":[{\"workflow_job_id\":\"17985b09-2909-4b52-92e9-b42cd051022a\",\"project_id\":\"room_step10_20260226133745\",\"session_id\":\"room_step10_20260226133745\",\"status\":\"failed\",\"started_at\":\"2026-02-26T04:37:47.969434+00:00\",\"ended_at\":\"2026-02-26T04:37:48.010661+00:00\",\"updated_at\":\"2026-02-26T04:37:48.026595+00:00\"}]}"
+                    },
+                    {
+                        "name":  "conversation_log",
+                        "ok":  true,
+                        "detail":  "{\"project_id\":\"room_step10_20260226133745\",\"items\":[{\"timestamp\":\"2026-02-26T04:37:47.904075+00:00\",\"source\":\"user_message\",\"project_id\":\"room_step10_20260226133745\",\"session_id\":\"room_step10_20260226133745\",\"message\":\"Smoke test: plan-implement-review once\"},{\"timestamp\":\"2026-02-26T04:37:47.927497+00:00\",\"source\":\"workflow_event\",\"project_id\":\"room_step10_20260226133745\",\"session_id\":\"room_step10_20260226133745\",\"workflow_job_id\":\"17985b09-2909-4b52-92e9-b42cd051022a\",\"seq\":1,\"type\":\"meta\",\"event\":\"queued\",\"status\":\"queued\"},{\"timestamp\":\"2026-02-26T04:37:47.958424+00:00\",\"source\":\"system\",\"project_id\":\"room_step10_20260226133745\",\"session_id\":\"room_step10_20260226133745\",\"workflow_job_id\":\"17985b09-2909-4b52-92e9-b42cd051022a\",\"event\":\"workflow_queued\"},{\"timestamp\":\"2026-02-26T04:37:47.969460+00:00\",\"source\":\"workflow_event\",\"project_id\":\"room_step10_20260226133745\",\"session_id\":\"room_step10_20260226133745\",\"workflow_job_id\":\"17985b09-2909-4b52-92e9-b42cd051022a\",\"seq\":2,\"type\":\"meta\",\"event\":\"started\",\"status\":\"running\",\"started_at\":\"2026-02-26T04:37:47.969434+00:00\"},{\"timestamp\":\"2026-02-26T04:37:48.010679+00:00\",\"source\":\"workflow_event\",\"project_id\":\"room_step10_20260226133745\",\"session_id\":\"room_step10_20260226133745\",\"workflow_job_id\":\"17985b09-2909-4b52-92e9-b42cd051022a\",\"seq\":3,\"type\":\"meta\",\"event\":\"error\",\"status\":\"failed\",\"message\":\"RUNNER_PREFLIGHT_FAILED: All connection attempts failed\",\"ended_at\":\"2026-02-26T04:37:48.010661+00:00\"}]}"
+                    }
+                ]
+}
