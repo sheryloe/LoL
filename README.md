@@ -35,6 +35,14 @@ Detailed docs:
 - [Blog Structure](./docs/blog/README.md)
 - [Strict Real Execution Plan](./docs/STRICT_REAL_EXECUTION_PLAN.md)
 
+## 4-Step Consolidated Log (Latest)
+
+- [4-Step Consolidated Index](./docs/mega-steps/README.md)
+- [Step 01 - Architecture Baseline](./docs/mega-steps/STEP-01-architecture-baseline.md)
+- [Step 02 - Workflow and Persistence Core](./docs/mega-steps/STEP-02-workflow-persistence-core.md)
+- [Step 03 - Real Execution and Reliability Hardening](./docs/mega-steps/STEP-03-real-execution-reliability.md)
+- [Step 04 - RAG and Dockerized Multi-CLI Orchestrator MVP](./docs/mega-steps/STEP-04-rag-and-dockerized-mvp.md)
+
 ## RAG Track (Step 1/10)
 
 - [RAG Step Index](./docs/rag-steps/README.md)
