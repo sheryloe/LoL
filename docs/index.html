@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vibe_Cowork_Thinking | Runner와 Orchestrator로 구성한 AI 협업 워크플로 저장소</title>
+  <meta name="description" content="프로젝트별 설정과 실행 로그를 유지하면서 Codex/Gemini 작업 흐름을 오케스트레이션하는 실험적 워크스페이스입니다.">
+  <meta name="keywords" content="AI orchestration workspace, codex runner orchestrator, project room workflow, AI 협업 워크플로, runner orchestrator">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://sheryloe.github.io/Vibe_Cowork_Thinking/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Vibe_Cowork_Thinking">
+  <meta property="og:description" content="프로젝트별 설정과 실행 로그를 유지하면서 Codex/Gemini 작업 흐름을 오케스트레이션하는 실험적 워크스페이스입니다.">
+  <meta property="og:url" content="https://sheryloe.github.io/Vibe_Cowork_Thinking/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Vibe_Cowork_Thinking">
+  <meta name="twitter:description" content="프로젝트별 설정과 실행 로그를 유지하면서 Codex/Gemini 작업 흐름을 오케스트레이션하는 실험적 워크스페이스입니다.">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "SoftwareSourceCode", "name": "Vibe_Cowork_Thinking", "codeRepository": "https://github.com/sheryloe/Vibe_Cowork_Thinking", "description": "프로젝트별 설정과 실행 로그를 유지하면서 Codex/Gemini 작업 흐름을 오케스트레이션하는 실험적 워크스페이스입니다.", "programmingLanguage": "FastAPI", "url": "https://sheryloe.github.io/Vibe_Cowork_Thinking/", "keywords": "AI orchestration workspace, codex runner orchestrator, project room workflow, AI 협업 워크플로, runner orchestrator"}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Vibe_Cowork_Thinking은 무엇을 실험하나요?", "acceptedAnswer": {"@type": "Answer", "text": "AI 코딩 도구를 프로젝트 룸과 실행 워크플로 단위로 관리하는 방식을 실험합니다."}}, {"@type": "Question", "name": "Runner는 어떤 역할을 하나요?", "acceptedAnswer": {"@type": "Answer", "text": "Windows Host에서 codex, gemini, git 명령을 제어하고 작업 상태를 반환합니다."}}, {"@type": "Question", "name": "왜 로그 구조가 중요한가요?", "acceptedAnswer": {"@type": "Answer", "text": "conversation, runs, journals를 분리 저장해야 프로젝트 단위 추적과 재현이 가능하기 때문입니다."}}]}]}</script>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <span class="eyebrow">Project Landing Page</span>
+      <div>
+        <h1>Vibe_Cowork_Thinking</h1>
+        <p class="lead">프로젝트별 설정과 실행 로그를 유지하면서 Codex/Gemini 작업 흐름을 오케스트레이션하는 실험적 워크스페이스입니다.</p>
+      </div>
+      <div class="cta-row">
+        <a class="primary" href="https://github.com/sheryloe/Vibe_Cowork_Thinking">GitHub Repository</a>
+        <a href="https://sheryloe.github.io/">Project Hub</a>
+      </div>
+      <div class="meta-row">
+        <span class="meta-chip">Runner와 Orchestrator로 구성한 AI 협업 워크플로 저장소</span>
+        <span class="meta-chip">AI 협업 오케스트레이션, Codex/Gemini 러너, 워크플로 자동화에 관심 있는 개발자</span>
+      </div>
+      <div class="chip-row"><span class="chip">AI orchestration workspace</span><span class="chip">codex runner orchestrator</span><span class="chip">project room workflow</span><span class="chip">AI 협업 워크플로</span><span class="chip">runner orchestrator</span></div>
+    </section>
+    <section class="section">
+      <h2>Why This Project Exists</h2>
+      <p>AI 코딩 보조 도구를 프로젝트 단위로 운영하려면 실행 로그, 권한, 워크플로 단계, Git 연동을 함께 다뤄야 합니다.</p>
+      <div class="cards"><article class="card"><h3>Feature</h3><p>Runner와 Orchestrator를 분리한 실행 구조</p></article><article class="card"><h3>Feature</h3><p>프로젝트별 `settings.json`, conversation, run, journal 기록 축적</p></article><article class="card"><h3>Feature</h3><p>Plan -&gt; Implement -&gt; Review -&gt; Fix 흐름 추적</p></article><article class="card"><h3>Feature</h3><p>Git status/commit/push와 연동 가능한 Host Runner API</p></article></div>
+    </section>
+    <section class="section split">
+      <div class="stack">
+        <div>
+          <h2>Workflow</h2>
+          <ul class="clean"><li>Runner 실행</li><li>Orchestrator 기동 후 프로젝트 룸 선택</li><li>워크플로 스트림과 로그, Git 상태를 함께 확인</li></ul>
+        </div>
+        <div>
+          <h2>Tech Stack</h2>
+          <ul class="clean"><li>FastAPI</li><li>Docker Compose</li><li>Web UI</li><li>Runner/Orchestrator architecture</li></ul>
+        </div>
+      </div>
+      <div class="flow">
+        <div>
+          <h2>Quick Start</h2>
+          <pre>`runner/start_runner.ps1`로 Host Runner를 실행합니다.
+`orchestrator`에서 `docker compose up --build`로 오케스트레이터를 실행합니다.
+브라우저에서 `http://localhost:8080`으로 접속합니다.</pre>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <h2>Repository Structure</h2>
+      <ul class="clean"><li>`runner/`: Windows Host에서 codex/gemini/git 실행</li><li>`orchestrator/`: Web UI와 워크플로 상태 관리</li><li>`docs/`: TODO, 백테스트, 결과 문서</li></ul>
+    </section>
+    <section class="section">
+      <h2>FAQ</h2>
+      <div class="cards"><article class="faq-item"><h3>Vibe_Cowork_Thinking은 무엇을 실험하나요?</h3><p>AI 코딩 도구를 프로젝트 룸과 실행 워크플로 단위로 관리하는 방식을 실험합니다.</p></article><article class="faq-item"><h3>Runner는 어떤 역할을 하나요?</h3><p>Windows Host에서 codex, gemini, git 명령을 제어하고 작업 상태를 반환합니다.</p></article><article class="faq-item"><h3>왜 로그 구조가 중요한가요?</h3><p>conversation, runs, journals를 분리 저장해야 프로젝트 단위 추적과 재현이 가능하기 때문입니다.</p></article></div>
+    </section>
+    <p class="footer">Last updated: 2026-03-12 · Owner: sheryloe</p>
+  </main>
+</body>
+</html>

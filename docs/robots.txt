@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sheryloe.github.io/Vibe_Cowork_Thinking/sitemap.xml
