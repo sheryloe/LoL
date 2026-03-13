@@ -1,0 +1,11 @@
+{
+  "name": "Vibe_Cowork_Thinking",
+  "short_name": "VibeCowork",
+  "description": "Runner와 Orchestrator로 AI 협업 워크플로를 다루는 실험실",
+  "lang": "ko-KR",
+  "start_url": "https://sheryloe.github.io/Vibe_Cowork_Thinking/",
+  "scope": "https://sheryloe.github.io/Vibe_Cowork_Thinking/",
+  "display": "standalone",
+  "background_color": "#f4eddc",
+  "theme_color": "#0f4c81"
+}
