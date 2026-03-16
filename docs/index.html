@@ -1,294 +1,112 @@
-<!doctype html>
-<html lang="ko">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vibe_Cowork_Thinking | Runner와 Orchestrator로 AI 협업 워크플로를 다루는 실험실</title>
-    <meta
-      name="description"
-      content="Runner와 Orchestrator를 분리해 Codex/Gemini 작업 흐름, 로그 축적, Git 연동을 프로젝트 단위로 관리하는 실험형 저장소입니다."
-    >
-    <meta
-      name="keywords"
-      content="AI orchestration workspace, codex runner orchestrator, project room workflow, AI 작업 워크플로, runner orchestrator"
-    >
-    <meta name="robots" content="index, follow, max-image-preview:large">
-    <meta name="googlebot" content="index, follow, max-image-preview:large">
-    <meta name="theme-color" content="#0f4c81">
-    <meta property="og:type" content="website">
-    <meta property="og:locale" content="ko_KR">
-    <meta property="og:site_name" content="Vibe_Cowork_Thinking">
-    <meta property="og:title" content="Vibe_Cowork_Thinking | Runner와 Orchestrator로 AI 협업 워크플로를 다루는 실험실">
-    <meta
-      property="og:description"
-      content="AI 작업 흐름을 프로젝트 룸 단위로 기록하고, 실행 로그와 Git 흐름까지 연결하는 Runner/Orchestrator 저장소입니다."
-    >
-    <meta property="og:url" content="https://sheryloe.github.io/Vibe_Cowork_Thinking/">
-    <meta
-      property="og:image"
-      content="https://sheryloe.github.io/Vibe_Cowork_Thinking/assets/screenshots/vibe-cowork-thinking-cover.png"
-    >
-    <meta property="og:image:alt" content="Vibe_Cowork_Thinking 블로그형 소개 페이지 커버">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Vibe_Cowork_Thinking">
-    <meta
-      name="twitter:description"
-      content="Runner와 Orchestrator로 AI 협업 워크플로를 관리하는 실험형 저장소"
-    >
-    <meta
-      name="twitter:image"
-      content="https://sheryloe.github.io/Vibe_Cowork_Thinking/assets/screenshots/vibe-cowork-thinking-cover.png"
-    >
-    <link rel="canonical" href="https://sheryloe.github.io/Vibe_Cowork_Thinking/">
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-    <link rel="manifest" href="site.webmanifest">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Outfit:wght@500;600;700;800&display=swap"
-      rel="stylesheet"
-    >
-    <link rel="stylesheet" href="./styles.css">
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "SoftwareSourceCode",
-            "name": "Vibe_Cowork_Thinking",
-            "codeRepository": "https://github.com/sheryloe/Vibe_Cowork_Thinking",
-            "url": "https://sheryloe.github.io/Vibe_Cowork_Thinking/",
-            "programmingLanguage": "Python, FastAPI, Docker Compose",
-            "description": "Runner와 Orchestrator를 분리해 Codex/Gemini 작업 흐름, 로그 축적, Git 연동을 프로젝트 단위로 관리하는 실험형 저장소입니다.",
-            "keywords": "AI orchestration workspace, codex runner orchestrator, project room workflow, AI 작업 워크플로, runner orchestrator"
-          },
-          {
-            "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "Vibe_Cowork_Thinking은 무엇을 실험하나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "AI 코딩 도구를 프로젝트 룸과 실행 워크플로 단위로 관리하는 방식을 실험합니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Runner는 어떤 역할을 하나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Windows Host에서 codex, gemini, git 명령을 제어하고 작업 상태를 반환합니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "왜 로그 구조가 중요한가요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "conversation, runs, journals를 분리 저장해 프로젝트 단위 추적과 재현을 가능하게 하기 때문입니다."
-                }
-              }
-            ]
-          }
-        ]
-      }
-    </script>
-  </head>
-  <body>
-    <div class="page-shell">
-      <header class="topbar">
-        <a class="brand" href="#top">
-          <span class="brand-mark">VC</span>
-          <span class="brand-text">
-            <strong>Vibe_Cowork_Thinking</strong>
-            <span>Runner + orchestrator lab</span>
-          </span>
-        </a>
-        <nav class="topnav" aria-label="페이지 이동">
-          <a href="#features">특징</a>
-          <a href="#workflow">구성</a>
-          <a href="#notes">실험 노트</a>
-          <a href="#faq">FAQ</a>
-          <a href="https://github.com/sheryloe/Vibe_Cowork_Thinking">GitHub</a>
-        </nav>
-      </header>
-
-      <main id="top">
-        <section class="hero">
-          <div class="hero-copy">
-            <p class="eyebrow">AI workflow lab</p>
-            <h1>AI 작업 흐름을<br>Runner와 Orchestrator로 나눠<br>프로젝트 단위로 추적하기</h1>
-            <p class="hero-body">
-              Vibe_Cowork_Thinking은 Codex와 Gemini 같은 AI 도구를 개별 채팅이 아니라 프로젝트 룸과 실행 이력 중심으로 관리하려는 실험입니다.
-              Runner가 Windows Host의 실제 명령을 맡고, Orchestrator가 웹 UI와 작업 흐름을 담당하며, conversation·runs·journals를 나눠 저장해
-              재현 가능한 협업 워크플로를 만드는 데 집중합니다.
-            </p>
-            <div class="hero-actions">
-              <a class="button primary" href="https://github.com/sheryloe/Vibe_Cowork_Thinking">GitHub 저장소 보기</a>
-              <a class="button secondary" href="https://sheryloe.github.io/">프로젝트 허브로 이동</a>
-            </div>
-            <ul class="hero-meta">
-              <li>Runner + Orchestrator 아키텍처</li>
-              <li>프로젝트 룸 기반 실행 흐름</li>
-              <li>Git guarded flow 실험</li>
-            </ul>
-          </div>
-
-          <div class="hero-visual" aria-label="Vibe_Cowork_Thinking 핵심 구조">
-            <figure class="visual-card visual-main visual-note">
-              <span class="note-badge">Backtest</span>
-              <strong>21 / 22 테스트 통과, 1건은 preflight fail-fast 개선 과제</strong>
-              <p>문서와 백테스트 결과를 함께 공개해 아직 실험 중인 영역과 이미 검증된 흐름을 구분해서 읽을 수 있도록 정리했습니다.</p>
-              <div class="metric-row">
-                <span class="metric-chip">FastAPI</span>
-                <span class="metric-chip">Docker Compose</span>
-                <span class="metric-chip">Runner API</span>
-                <span class="metric-chip">Web UI</span>
-              </div>
-              <ul class="note-list">
-                <li>프로젝트별 settings, conversation, run, journal 축적</li>
-                <li>Plan → Implement → Review → Fix 흐름 추적</li>
-                <li>Git status, commit, push와 연결 가능한 host runner</li>
-              </ul>
-            </figure>
-            <figure class="visual-card visual-side visual-note">
-              <span class="note-badge">Roadmap</span>
-              <strong>Preflight, cancel, guarded Git flow를 계속 보강</strong>
-              <p>지금은 동작 여부뿐 아니라 실패 시나리오와 권한 제어를 얼마나 안전하게 다루는지가 핵심 과제로 남아 있습니다.</p>
-            </figure>
-            <div class="visual-caption">
-              <strong>AI 협업 도구를 실제 운영 흐름으로 재해석한 저장소</strong>
-              <p>단순 채팅 인터페이스 소개가 아니라, 프로젝트와 로그, 실행 권한, Git 흐름을 어떻게 묶을지에 대한 실험 기록입니다.</p>
-            </div>
-          </div>
-        </section>
-
-        <section class="feature-strip" id="features">
-          <article>
-            <span>01</span>
-            <h2>Runner와 Orchestrator를 분리한 구조</h2>
-            <p>실제 명령 실행과 웹 기반 워크플로 관리를 나눠 책임 경계를 명확히 했습니다.</p>
-          </article>
-          <article>
-            <span>02</span>
-            <h2>프로젝트 룸별 로그 축적</h2>
-            <p>conversation, runs, journals를 분리해 프로젝트 단위 추적과 회고가 가능하도록 설계했습니다.</p>
-          </article>
-          <article>
-            <span>03</span>
-            <h2>Git 흐름까지 연결되는 Host Runner API</h2>
-            <p>상태 조회에서 commit, push까지 이어지는 guarded flow 실험을 통해 실제 협업 환경을 닮게 만들고 있습니다.</p>
-          </article>
-        </section>
-
-        <section class="workflow" id="workflow">
-          <div class="section-heading">
-            <p class="eyebrow">Workflow</p>
-            <h2>이 저장소를 이해하는 가장 쉬운 흐름</h2>
-            <p class="section-body">
-              README와 TODO, 백테스트 리포트를 함께 묶어 프로젝트 의도와 현재 상태가 동시에 보이도록 구성했습니다.
-            </p>
-          </div>
-          <div class="workflow-grid">
-            <article class="workflow-card">
-              <strong>1. Runner를 먼저 실행</strong>
-              <p>Windows Host에서 codex, gemini, git 명령을 제어할 수 있는 기반을 준비합니다.</p>
-            </article>
-            <article class="workflow-card">
-              <strong>2. Orchestrator와 Web UI 기동</strong>
-              <p>프로젝트 룸을 만들고 작업 흐름과 로그를 브라우저에서 관리할 수 있게 합니다.</p>
-            </article>
-            <article class="workflow-card">
-              <strong>3. Backtest와 TODO로 현재 성숙도 확인</strong>
-              <p>무엇이 통과했고 무엇이 아직 과제인지 문서와 결과 파일로 바로 이어서 확인할 수 있습니다.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="screenshots" id="notes">
-          <div class="section-heading">
-            <p class="eyebrow">Experiment notes</p>
-            <h2>문서 안에 남아 있는 현재 상태와 다음 과제</h2>
-            <p class="section-body">
-              백테스트 리포트와 TODO 문서에서 확인할 수 있는 핵심 내용을 요약해 검색 유입 사용자도 현재 진척도를 빠르게 이해할 수 있게 했습니다.
-            </p>
-          </div>
-          <div class="flow-banner">
-            <article class="flow-step">
-              <span>RESULT</span>
-              <strong>백테스트: 22개 중 21개 통과</strong>
-              <p>Runner 기본 흐름, 프로젝트 CRUD, 채팅 시작, cancel, 파일 브라우저 API 등은 정상 동작으로 확인되었습니다.</p>
-            </article>
-            <article class="flow-step">
-              <span>TODO</span>
-              <strong>남은 과제는 fail-fast와 guarded flow 보강</strong>
-              <p>preflight 실패 처리, cancel 보강, Git Guarded Flow, 권한 모델 확장이 다음 단계로 잡혀 있습니다.</p>
-            </article>
-          </div>
-          <div class="workflow-grid">
-            <article class="workflow-card">
-              <strong>Quick start</strong>
-              <p>`runner/start_runner.ps1`, `docker compose up --build`, 그리고 브라우저에서 `http://localhost:8080` 접속 순서입니다.</p>
-            </article>
-            <article class="workflow-card">
-              <strong>Repository structure</strong>
-              <p>`runner/`, `orchestrator/`, `docs/`로 분리해 실행기와 UI, 문서를 명확히 구분합니다.</p>
-            </article>
-            <article class="workflow-card">
-              <strong>Audience</strong>
-              <p>AI 작업 오케스트레이션, Codex/Gemini 협업, 프로젝트 룸 기반 워크플로에 관심 있는 개발자를 위한 저장소입니다.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="seo-copy">
-          <div class="section-heading">
-            <p class="eyebrow">Search intent</p>
-            <h2>AI 워크플로 검색 의도에 맞춘 표현</h2>
-          </div>
-          <div class="seo-grid">
-            <article>
-              <h3>국문 키워드</h3>
-              <p>AI 작업 워크플로, 프로젝트 룸, runner orchestrator 같은 표현을 문장 안에 직접 배치했습니다.</p>
-            </article>
-            <article>
-              <h3>영문 키워드</h3>
-              <p>AI orchestration workspace, codex runner orchestrator, project room workflow 같은 검색어를 함께 반영했습니다.</p>
-            </article>
-            <article>
-              <h3>현재 상태 노출</h3>
-              <p>백테스트 결과와 TODO 방향성을 노출해 아직 실험 중인 프로젝트라는 점까지 검색 결과에서 읽히도록 구성했습니다.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="faq" id="faq">
-          <div class="section-heading">
-            <p class="eyebrow">FAQ</p>
-            <h2>자주 묻는 질문</h2>
-          </div>
-          <div class="faq-list">
-            <details open>
-              <summary>Vibe_Cowork_Thinking은 무엇을 실험하나요?</summary>
-              <p>AI 코딩 도구를 프로젝트 룸과 실행 워크플로 단위로 관리하는 방식을 실험합니다.</p>
-            </details>
-            <details>
-              <summary>Runner는 어떤 역할을 하나요?</summary>
-              <p>Windows Host에서 codex, gemini, git 명령을 제어하고 작업 상태를 반환합니다.</p>
-            </details>
-            <details>
-              <summary>왜 로그 구조가 중요한가요?</summary>
-              <p>conversation, runs, journals를 분리 저장해 프로젝트 단위 추적과 재현을 가능하게 하기 때문입니다.</p>
-            </details>
-          </div>
-        </section>
-      </main>
-
-      <footer class="footer">
-        <span>Last updated: 2026-03-13</span>
-        <a href="https://github.com/sheryloe/Vibe_Cowork_Thinking">Repository</a>
-      </footer>
+<!DOCTYPE html>
+<html lang="ko" data-theme="dim">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vibe_Cowork_Thinking | AI 에이전트 작업을 운영하는 Runner + Orchestrator 랩</title>
+  <meta name="description" content="Codex/Gemini 작업 흐름을 프로젝트 단위로 기록하고 운영하는 Runner + Orchestrator 워크스페이스">
+  <meta name="theme-color" content="#10273b">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Vibe_Cowork_Thinking | AI 에이전트 작업을 운영하는 Runner + Orchestrator 랩">
+  <meta property="og:description" content="대화 로그, 실행 기록, 작업 단계, Git 흐름을 프로젝트 단위로 운영하는 AI 워크플로 실험실">
+  <meta property="og:url" content="https://sheryloe.github.io/Vibe_Cowork_Thinking/">
+  <meta property="og:image" content="https://sheryloe.github.io/Vibe_Cowork_Thinking/assets/screenshots/vibe-cowork-thinking-cover.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.24/dist/full.min.css" rel="stylesheet" type="text/css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: "IBM Plex Sans KR", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(45, 212, 191, 0.14), transparent 24rem),
+        radial-gradient(circle at top right, rgba(96, 165, 250, 0.14), transparent 24rem),
+        linear-gradient(180deg, #08121b 0%, #0b1724 52%, #10202f 100%);
+    }
+    .display-font { font-family: "Sora", sans-serif; }
+    .glass {
+      background: rgba(9, 20, 31, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(16px);
+    }
+  </style>
+</head>
+<body class="text-slate-100">
+  <header class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
+      <a href="#top" class="flex items-center gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-300 text-slate-950 shadow-lg shadow-teal-300/25">
+          <span class="display-font text-lg font-bold">VC</span>
+        </div>
+        <div>
+          <p class="display-font text-lg font-bold">Vibe_Cowork_Thinking</p>
+          <p class="text-xs uppercase tracking-[0.24em] text-teal-100/70">AI workflow lab</p>
+        </div>
+      </a>
+      <nav class="hidden gap-3 md:flex">
+        <a class="btn btn-ghost btn-sm text-slate-100" href="#architecture">구조</a>
+        <a class="btn btn-ghost btn-sm text-slate-100" href="#flow">흐름</a>
+        <a class="btn btn-ghost btn-sm text-slate-100" href="#todo">TODO</a>
+        <a class="btn btn-accent btn-sm text-slate-950" href="https://github.com/sheryloe/Vibe_Cowork_Thinking">GitHub</a>
+      </nav>
     </div>
-  </body>
+  </header>
+
+  <main id="top" class="mx-auto flex max-w-7xl flex-col gap-10 px-6 pb-24 pt-10">
+    <section class="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+      <div class="glass rounded-[2rem] p-8 lg:p-10">
+        <span class="badge badge-accent badge-outline mb-5">Runner + Orchestrator</span>
+        <h1 class="display-font max-w-3xl text-4xl font-black leading-tight text-white md:text-6xl">
+          AI 에이전트 작업을
+          프로젝트 단위로
+          운영하기 위한
+          워크스페이스
+        </h1>
+        <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
+          Vibe_Cowork_Thinking은 Codex, Gemini 같은 도구를 단순 채팅이 아니라
+          프로젝트 방 단위의 실행 체계로 다루기 위해 만든 실험실입니다.
+          핵심은 대화 이력, 실행 결과, Git 흐름, 작업 단계를 같이 남기는 것입니다.
+        </p>
+        <div class="mt-7 flex flex-wrap gap-3">
+          <a class="btn btn-accent text-slate-950" href="https://github.com/sheryloe/Vibe_Cowork_Thinking">저장소 보기</a>
+        </div>
+      </div>
+      <figure class="glass overflow-hidden rounded-[2rem] p-4">
+        <img class="w-full rounded-[1.5rem] object-cover" src="assets/screenshots/vibe-cowork-thinking-cover.png" alt="Vibe Cowork Thinking cover">
+      </figure>
+    </section>
+
+    <section id="architecture" class="grid gap-5 lg:grid-cols-3">
+      <article class="glass rounded-[1.75rem] p-6"><i data-lucide="server-cog" class="h-8 w-8 text-teal-300"></i><h2 class="display-font mt-4 text-2xl font-bold text-white">Runner</h2><p class="mt-3 text-slate-300">Windows host에서 codex, gemini, git 같은 실제 실행을 담당합니다.</p></article>
+      <article class="glass rounded-[1.75rem] p-6"><i data-lucide="panels-top-left" class="h-8 w-8 text-teal-300"></i><h2 class="display-font mt-4 text-2xl font-bold text-white">Orchestrator</h2><p class="mt-3 text-slate-300">웹 UI에서 프로젝트 룸과 작업 상태를 보여주고 흐름을 제어합니다.</p></article>
+      <article class="glass rounded-[1.75rem] p-6"><i data-lucide="scroll-text" class="h-8 w-8 text-teal-300"></i><h2 class="display-font mt-4 text-2xl font-bold text-white">Journal</h2><p class="mt-3 text-slate-300">conversation, runs, journal을 분리해 추적성과 재현성을 높입니다.</p></article>
+    </section>
+
+    <section id="flow" class="glass rounded-[2rem] p-8 lg:p-10">
+      <div class="max-w-3xl">
+        <span class="badge badge-outline badge-accent">Workflow</span>
+        <h2 class="display-font mt-4 text-3xl font-black text-white md:text-4xl">생성보다 중요한 것은 작업 이력의 연결입니다</h2>
+      </div>
+      <div class="mt-8 grid gap-4 lg:grid-cols-4">
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-5"><p class="font-semibold text-teal-200">01 Plan</p><p class="mt-2 text-white">프로젝트 방에서 작업 목표를 정합니다.</p></div>
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-5"><p class="font-semibold text-teal-200">02 Run</p><p class="mt-2 text-white">Runner가 실제 명령과 툴 실행을 수행합니다.</p></div>
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-5"><p class="font-semibold text-teal-200">03 Review</p><p class="mt-2 text-white">실행 결과와 아티팩트를 확인합니다.</p></div>
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-5"><p class="font-semibold text-teal-200">04 Track</p><p class="mt-2 text-white">Git 상태와 journal이 프로젝트 기록으로 남습니다.</p></div>
+      </div>
+    </section>
+
+    <section id="todo" class="grid gap-5 lg:grid-cols-3">
+      <article class="glass rounded-[1.75rem] p-6"><span class="badge badge-warning">Ops</span><h2 class="display-font mt-4 text-2xl font-bold text-white">실행 재개</h2><p class="mt-3 text-slate-300">중단된 작업을 이어서 실행하는 흐름이 있으면 운영 도구로서 가치가 커집니다.</p></article>
+      <article class="glass rounded-[1.75rem] p-6"><span class="badge badge-success">Compare</span><h2 class="display-font mt-4 text-2xl font-bold text-white">산출물 diff</h2><p class="mt-3 text-slate-300">에이전트별 결과 차이를 비교하는 뷰가 들어가면 실험 품질이 좋아집니다.</p></article>
+      <article class="glass rounded-[1.75rem] p-6"><span class="badge badge-info">Policy</span><h2 class="display-font mt-4 text-2xl font-bold text-white">권한 정책</h2><p class="mt-3 text-slate-300">프로젝트별 허용 명령, 예산, 승인 정책을 분리하면 팀 도구로 확장하기 좋습니다.</p></article>
+    </section>
+  </main>
+
+  <script>lucide.createIcons();</script>
+</body>
 </html>
